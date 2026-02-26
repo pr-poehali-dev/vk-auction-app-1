@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import bridge from "@vkontakte/vk-bridge";
 import { useVKUser } from "@/hooks/useVKUser";
 import type { Lot, User, Screen } from "@/types/auction";
 import { apiGetLots, apiGetLot, apiPlaceBid, apiAdmin, normalizeLot } from "@/api/auction";
@@ -12,27 +13,46 @@ export default function Index() {
   const [activeLot, setActiveLot] = useState<Lot | null>(null);
   const [editingLotId, setEditingLotId] = useState<string | null | "new">(null);
   const [loading, setLoading] = useState(true);
+  const notifiedLots = useRef<Set<string>>(new Set());
   const vkUser = useVKUser();
+  const vkUserId = vkUser.id;
   const user: User = {
-    id: vkUser.id,
+    id: vkUserId,
     name: vkUser.name,
     avatar: vkUser.avatar,
     isAdmin: vkUser.isAdmin,
   };
+
+  // Notify winner via VK Bridge alert
+  function notifyWinner(lot: Lot) {
+    if (notifiedLots.current.has(lot.id)) return;
+    notifiedLots.current.add(lot.id);
+    bridge.send("VKWebAppShowMessageBox", {
+      title: "🏆 Вы победили!",
+      message: `Поздравляем! Вы выиграли лот «${lot.title}» за ${lot.currentPrice.toLocaleString("ru-RU")} ₽. Свяжитесь с организатором для получения приза.`,
+      button_text: "Отлично!",
+    }).catch(() => null);
+  }
 
   // Load lots list from API
   const loadLots = useCallback(async () => {
     try {
       const data = await apiGetLots();
       if (Array.isArray(data)) {
-        setLots(data.map(normalizeLot));
+        const normalized = data.map(normalizeLot);
+        setLots(normalized);
+        normalized.forEach((lot) => {
+          if (lot.status === "finished" && lot.winnerId === vkUserId && vkUserId !== "guest") {
+            notifyWinner(lot);
+          }
+        });
       }
     } catch {
       // keep previous state on error
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [vkUserId]);
 
   useEffect(() => {
     loadLots();
