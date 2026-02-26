@@ -207,10 +207,15 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     setVideoName(file.name);
 
     const UPLOAD_URL = "https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e";
-    const CHUNK_SIZE = 5 * 1024 * 1024; // 5 МБ
+    const CHUNK_SIZE = 3 * 1024 * 1024; // 3 МБ (base64 ~4МБ, в лимите платформы)
 
-    const api = (body: object) =>
-      fetch(UPLOAD_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+    const api = async (body: object) => {
+      const r = await fetch(UPLOAD_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    };
+
+    try {
 
     // 1. Инициализируем multipart upload
     const { uploadId, key } = await api({ action: "init", filename: file.name, contentType: file.type });
@@ -242,6 +247,10 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     } else {
       await api({ action: "abort", key, uploadId });
       alert("Ошибка завершения загрузки");
+    }
+
+    } catch (err) {
+      alert("Ошибка загрузки: " + String(err));
     }
     setVideoUploading(false);
   }
