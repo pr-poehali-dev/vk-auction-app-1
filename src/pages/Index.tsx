@@ -5,7 +5,6 @@ import type { Lot, User, Screen } from "@/types/auction";
 import { apiGetLots, apiGetLot, apiPlaceBid, apiAdmin, normalizeLot } from "@/api/auction";
 import { CatalogScreen, LotScreen, BidsScreen, ProfileScreen, BottomNav } from "@/components/auction/LotScreens";
 import { AdminScreen, AdminLotForm } from "@/components/auction/AdminScreens";
-import Icon from "@/components/ui/icon";
 
 export default function Index() {
   const [screen, setScreen] = useState<Screen>("catalog");
@@ -193,10 +192,7 @@ export default function Index() {
               JOYLOTS
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Icon name="Signal" size={13} className="text-[#C5B89A]" />
-            <Icon name="Battery" size={13} className="text-[#C5B89A]" />
-          </div>
+
         </div>
 
         {/* Main content */}
