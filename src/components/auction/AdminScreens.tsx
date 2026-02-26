@@ -190,7 +190,8 @@ export function AdminLotForm({ lot, onBack, onSave }: {
   });
   const [videoUploading, setVideoUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [videoName, setVideoName] = useState(lot?.video ? "Видео загружено" : "");
+  const isS3Video = lot?.video?.startsWith("https://cdn.poehali.dev");
+  const [videoName, setVideoName] = useState(isS3Video ? "Видео загружено (CDN)" : lot?.video ? "ВК-видео" : "");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function set(key: string, val: unknown) {
