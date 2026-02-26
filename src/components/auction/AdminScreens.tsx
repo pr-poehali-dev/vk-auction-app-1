@@ -189,6 +189,7 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     antiSnipeMinutes: lot?.antiSnipeMinutes || 2,
   });
   const [videoUploading, setVideoUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [videoName, setVideoName] = useState(lot?.video ? "Видео загружено" : "");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -196,22 +197,35 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     setForm((f) => ({ ...f, [key]: val }));
   }
 
-  async function handleVideoFile(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleVideoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setVideoUploading(true);
+    setUploadProgress(0);
     setVideoName(file.name);
+
     const reader = new FileReader();
-    reader.onload = async () => {
+    reader.onprogress = (ev) => {
+      if (ev.lengthComputable) setUploadProgress(Math.round((ev.loaded / ev.total) * 40));
+    };
+    reader.onload = () => {
       const b64 = (reader.result as string).split(",")[1];
-      const res = await fetch("https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, data: b64, contentType: file.type }),
-      });
-      const json = await res.json();
-      if (json.url) set("video", json.url);
-      setVideoUploading(false);
+      const body = JSON.stringify({ filename: file.name, data: b64, contentType: file.type });
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e");
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.upload.onprogress = (ev) => {
+        if (ev.lengthComputable) setUploadProgress(40 + Math.round((ev.loaded / ev.total) * 55));
+      };
+      xhr.onload = () => {
+        const json = JSON.parse(xhr.responseText);
+        if (json.url) set("video", json.url);
+        setUploadProgress(100);
+        setVideoUploading(false);
+      };
+      xhr.onerror = () => setVideoUploading(false);
+      xhr.send(body);
     };
     reader.readAsDataURL(file);
   }
@@ -264,6 +278,23 @@ export function AdminLotForm({ lot, onBack, onSave }: {
             <Icon name={videoUploading ? "Loader" : "Upload"} size={16} className={videoUploading ? "animate-spin" : ""} />
             {videoUploading ? "Загружаем видео…" : videoName ? "Заменить видео" : "Загрузить видео с телефона"}
           </button>
+          {videoUploading && (
+            <div className="mt-2">
+              <div className="flex justify-between text-[11px] text-[#B8A070] mb-1">
+                <span>{videoName}</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-[#EDE0C8] overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%`, background: "linear-gradient(90deg, #C9A84C, #E8C96B)" }}
+                />
+              </div>
+              <p className="text-[11px] text-[#B8A070] mt-1">
+                {uploadProgress < 40 ? "Подготовка файла…" : uploadProgress < 95 ? "Загрузка на сервер…" : "Завершаем…"}
+              </p>
+            </div>
+          )}
           {videoName && !videoUploading && (
             <p className="text-[11px] text-[#B8A070] mt-1.5 flex items-center gap-1">
               <Icon name="CheckCircle" size={11} className="text-green-500" />
