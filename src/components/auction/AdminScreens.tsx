@@ -206,32 +206,33 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     setUploadProgress(0);
     setVideoName(file.name);
 
-    // 1. Получаем presigned URL с бекенда
-    const res = await fetch("https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename: file.name, contentType: file.type }),
-    });
-    const { uploadUrl, cdnUrl } = await res.json();
-
-    // 2. Грузим файл напрямую в S3 с прогрессом
+    // Грузим файл напрямую через XHR — реальный прогресс
     const xhr = new XMLHttpRequest();
-    xhr.open("PUT", uploadUrl);
-    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.open("POST", "https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e");
+    xhr.setRequestHeader("X-Filename", encodeURIComponent(file.name));
+    xhr.setRequestHeader("X-Content-Type", file.type);
     xhr.upload.onprogress = (ev) => {
       if (ev.lengthComputable) setUploadProgress(Math.round((ev.loaded / ev.total) * 100));
     };
     xhr.onload = () => {
-      // S3 может вернуть 200, 204 или 201
-      if (xhr.status >= 200 && xhr.status < 300) {
-        set("video", cdnUrl);
-        setUploadProgress(100);
-      } else {
-        console.error("S3 upload failed:", xhr.status, xhr.responseText);
+      try {
+        const json = JSON.parse(xhr.responseText);
+        if (json.url) {
+          videoUrlRef.current = json.url;
+          set("video", json.url);
+          setUploadProgress(100);
+        } else {
+          alert("Ошибка загрузки: " + xhr.responseText);
+        }
+      } catch {
+        alert("Ошибка сервера при загрузке видео");
       }
       setVideoUploading(false);
     };
-    xhr.onerror = () => setVideoUploading(false);
+    xhr.onerror = () => {
+      alert("Ошибка соединения при загрузке видео");
+      setVideoUploading(false);
+    };
     xhr.send(file);
   }
 
