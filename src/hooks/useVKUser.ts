@@ -27,7 +27,10 @@ const DEV_USER: VKUser = {
 };
 
 function isDevEnvironment(): boolean {
-  return window.location.hostname.includes("poehali.dev");
+  const params = new URLSearchParams(window.location.search);
+  const hasVKParams = params.has("vk_user_id") || params.has("vk_app_id") || params.has("vk_group_id");
+  if (hasVKParams) return false;
+  return import.meta.env.DEV;
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
