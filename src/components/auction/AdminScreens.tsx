@@ -221,9 +221,12 @@ export function AdminLotForm({ lot, onBack, onSave }: {
       if (ev.lengthComputable) setUploadProgress(Math.round((ev.loaded / ev.total) * 100));
     };
     xhr.onload = () => {
-      if (xhr.status === 200 || xhr.status === 204) {
+      // S3 может вернуть 200, 204 или 201
+      if (xhr.status >= 200 && xhr.status < 300) {
         set("video", cdnUrl);
         setUploadProgress(100);
+      } else {
+        console.error("S3 upload failed:", xhr.status, xhr.responseText);
       }
       setVideoUploading(false);
     };
