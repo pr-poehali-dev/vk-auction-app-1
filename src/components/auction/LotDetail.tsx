@@ -106,6 +106,7 @@ export function LotScreen({ lot, user, onBack, onBid }: {
   onBid: (lotId: string, amount: number) => string;
 }) {
   const [showBidModal, setShowBidModal] = useState(false);
+  const [videoKey, setVideoKey] = useState(0);
   const ms = useTimer(lot.endsAt);
   const isActive = lot.status === "active" && ms > 0;
   const leader = lot.bids[0];
@@ -127,6 +128,7 @@ export function LotScreen({ lot, user, onBack, onBid }: {
           </div>
           <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
             <iframe
+              key={videoKey}
               src={parseVKVideoEmbed(lot.video!)!}
               className="absolute inset-0 w-full h-full"
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
@@ -134,6 +136,15 @@ export function LotScreen({ lot, user, onBack, onBid }: {
               frameBorder="0"
             />
           </div>
+          {/* Кнопка перезапуска */}
+          <button
+            onClick={() => setVideoKey((k) => k + 1)}
+            className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white transition-opacity active:opacity-70"
+            style={{ background: "rgba(201,168,76,0.85)", backdropFilter: "blur(4px)" }}
+          >
+            <Icon name="RotateCcw" size={12} />
+            Смотреть снова
+          </button>
         </div>
       ) : (
         <div className="relative shrink-0">
