@@ -1,0 +1,69 @@
+import type { Bid, Lot, User } from "@/types/auction";
+
+const API = {
+  lots: "https://functions.poehali.dev/a4ff5c7f-b025-48d2-bb94-cc014f6d2568",
+  bid: "https://functions.poehali.dev/ba11208b-97ba-4756-b7b9-eba826787166",
+  admin: "https://functions.poehali.dev/c80458b7-040f-4c1e-afc7-9418aa34e00f",
+};
+
+type ApiResponse = Record<string, unknown>;
+
+async function apiFetch(url: string, opts?: RequestInit): Promise<ApiResponse | ApiResponse[]> {
+  const r = await fetch(url, { headers: { "Content-Type": "application/json" }, ...opts });
+  return r.json() as Promise<ApiResponse | ApiResponse[]>;
+}
+
+export function apiGetLots(): Promise<ApiResponse | ApiResponse[]> {
+  return apiFetch(API.lots);
+}
+
+export function apiGetLot(id: number): Promise<ApiResponse | ApiResponse[]> {
+  return apiFetch(`${API.lots}?id=${id}`);
+}
+
+export function apiPlaceBid(lotId: number, amount: number, user: User): Promise<ApiResponse | ApiResponse[]> {
+  return apiFetch(API.bid, {
+    method: "POST",
+    body: JSON.stringify({ lotId, amount, userId: user.id, userName: user.name, userAvatar: user.avatar }),
+  });
+}
+
+export function apiAdmin(body: object): Promise<ApiResponse | ApiResponse[]> {
+  return apiFetch(API.admin, { method: "POST", body: JSON.stringify(body) });
+}
+
+function normalizeBid(b: ApiResponse): Bid {
+  return {
+    id: String(b.id),
+    userId: String(b.userId ?? b.user_id ?? ""),
+    userName: String(b.userName ?? b.user_name ?? ""),
+    userAvatar: String(b.userAvatar ?? b.user_avatar ?? "??"),
+    amount: Number(b.amount),
+    createdAt: new Date(String(b.createdAt ?? b.created_at ?? "")),
+  };
+}
+
+export function normalizeLot(r: ApiResponse): Lot {
+  const bidsRaw = r.bids as ApiResponse[] | undefined;
+  return {
+    id: String(r.id),
+    title: String(r.title ?? ""),
+    description: String(r.description ?? ""),
+    image: String(r.image ?? ""),
+    startPrice: Number(r.startPrice ?? r.start_price ?? 0),
+    currentPrice: Number(r.currentPrice ?? r.current_price ?? 0),
+    step: Number(r.step ?? 100),
+    endsAt: new Date(String(r.endsAt ?? r.ends_at ?? "")),
+    status: (r.status as Lot["status"]) ?? "active",
+    winnerId: r.winnerId as string | undefined ?? r.winner_id as string | undefined,
+    winnerName: r.winnerName as string | undefined ?? r.winner_name as string | undefined,
+    antiSnipe: Boolean(r.antiSnipe ?? r.anti_snipe ?? false),
+    antiSnipeMinutes: Number(r.antiSnipeMinutes ?? r.anti_snipe_minutes ?? 2),
+    paymentStatus: (r.paymentStatus ?? r.payment_status) as Lot["paymentStatus"],
+    leaderId: r.leaderId as string | undefined,
+    leaderName: r.leaderName as string | undefined,
+    leaderAvatar: r.leaderAvatar as string | undefined,
+    bidCount: Number(r.bidCount ?? 0),
+    bids: bidsRaw ? bidsRaw.map(normalizeBid) : [],
+  };
+}
