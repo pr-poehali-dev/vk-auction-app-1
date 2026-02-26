@@ -251,17 +251,21 @@ export function BottomNav({ screen, onNav, isAdmin }: { screen: Screen; onNav: (
   if (screen === "lot" || screen === "admin-lot") return null;
 
   return (
-    <nav className="border-t border-[#E8E8E8] bg-white flex shrink-0">
+    <nav className="flex shrink-0" style={{ background: "#0F0D0A", borderTop: "1px solid #2E2920" }}>
       {items.map((item) => {
         const active = screen === item.id;
         return (
           <button
             key={item.id}
             onClick={() => onNav(item.id)}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-colors ${active ? "text-[#2787F5]" : "text-[#767676]"}`}
+            className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all"
+            style={{ color: active ? "#C9A84C" : "#4A3F28" }}
           >
             <Icon name={item.icon} size={22} />
             <span className="text-[10px] font-medium">{item.label}</span>
+            {active && (
+              <span className="block w-4 h-0.5 rounded-full mt-0.5" style={{ background: "#C9A84C" }} />
+            )}
           </button>
         );
       })}

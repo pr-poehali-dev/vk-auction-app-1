@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,6 +8,15 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
+
+    /* Joylots brand */
+    --joy-gold: #c9a84c;
+    --joy-gold-light: #e8c96b;
+    --joy-gold-dim: #8b6914;
+    --joy-dark: #0f0d0a;
+    --joy-dark-2: #1a1711;
+    --joy-dark-3: #231f18;
+    --joy-dark-4: #2e2920;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
