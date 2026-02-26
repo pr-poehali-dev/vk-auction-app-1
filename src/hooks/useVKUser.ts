@@ -31,7 +31,7 @@ export function useVKUser(): VKUser {
   useEffect(() => {
     async function init() {
       try {
-        bridge.send("VKWebAppInit");
+        bridge.send("VKWebAppInit", { app_id: 54464410 });
 
         const userInfo = await withTimeout(bridge.send("VKWebAppGetUserInfo"), 3000);
         const name = [userInfo.first_name, userInfo.last_name].filter(Boolean).join(" ");
