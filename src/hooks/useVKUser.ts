@@ -18,6 +18,18 @@ const FALLBACK_USER: VKUser = {
   isLoading: false,
 };
 
+const DEV_USER: VKUser = {
+  id: "dev",
+  name: "Разработчик",
+  avatar: "Р",
+  isAdmin: true,
+  isLoading: false,
+};
+
+function isDevEnvironment(): boolean {
+  return window.location.hostname.includes("poehali.dev");
+}
+
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     promise,
@@ -30,6 +42,11 @@ export function useVKUser(): VKUser {
 
   useEffect(() => {
     async function init() {
+      if (isDevEnvironment()) {
+        setUser(DEV_USER);
+        return;
+      }
+
       try {
         bridge.send("VKWebAppInit", { app_id: 54464410 });
 
