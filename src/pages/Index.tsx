@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
+import { useVKUser } from "@/hooks/useVKUser";
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 const API = {
@@ -113,13 +114,6 @@ interface User {
   isAdmin: boolean;
 }
 
-// ─── Mock Data ─────────────────────────────────────────────────────────────────
-const MOCK_USER: User = {
-  id: "u1",
-  name: "Алексей Смирнов",
-  avatar: "АС",
-  isAdmin: true,
-};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatTimer(ms: number): string {
@@ -882,7 +876,13 @@ export default function Index() {
   const [activeLot, setActiveLot] = useState<Lot | null>(null);
   const [editingLotId, setEditingLotId] = useState<string | null | "new">(null);
   const [loading, setLoading] = useState(true);
-  const user = MOCK_USER;
+  const vkUser = useVKUser();
+  const user: User = {
+    id: vkUser.id,
+    name: vkUser.name,
+    avatar: vkUser.avatar,
+    isAdmin: vkUser.isAdmin,
+  };
 
   // Load lots list from API
   const loadLots = useCallback(async () => {
@@ -979,6 +979,17 @@ export default function Index() {
     setActiveLot(found);
     loadLot(id);
     setScreen("lot");
+  }
+
+  if (vkUser.isLoading) {
+    return (
+      <div className="min-h-screen bg-[#D9DBE0] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#2787F5] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-[#8E8E93] text-sm">Загрузка...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
