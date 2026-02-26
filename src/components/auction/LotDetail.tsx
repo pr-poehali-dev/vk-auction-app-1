@@ -43,9 +43,9 @@ export function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; 
         style={{ animation: "slideUp 0.25s ease-out" }}
       >
         <div className="w-10 h-1 bg-[#E0E0E0] rounded-full mx-auto mb-4" />
-        <h3 className="font-semibold text-[17px] text-[#1C1C1E] mb-1">{lot.title}</h3>
-        <p className="text-sm text-[#767676] mb-4">
-          Минимальная ставка: <span className="text-[#2787F5] font-semibold">{formatPrice(minBid)}</span>
+        <h3 className="font-semibold text-[17px] text-[#1C1A16] mb-1">{lot.title}</h3>
+        <p className="text-sm text-[#B8A070] mb-4">
+          Минимальная ставка: <span className="font-semibold" style={{ color: "#B8922A" }}>{formatPrice(minBid)}</span>
         </p>
 
         {result ? (
@@ -58,7 +58,8 @@ export function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; 
           <>
             <button
               onClick={() => handleBid(minBid)}
-              className="w-full bg-[#2787F5] text-white rounded-xl py-3.5 font-semibold text-[15px] mb-3 active:opacity-80 transition-opacity"
+              className="w-full text-white rounded-xl py-3.5 font-semibold text-[15px] mb-3 active:opacity-80 transition-opacity"
+              style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}
             >
               + шаг — {formatPrice(minBid)}
             </button>
@@ -68,18 +69,22 @@ export function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; 
                 placeholder={`Своя сумма (от ${minBid})`}
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
-                className="flex-1 border border-[#E0E0E0] rounded-xl px-3 py-3 text-[15px] outline-none focus:border-[#2787F5]"
+                className="flex-1 rounded-xl px-3 py-3 text-[15px] outline-none"
+                style={{ border: "1px solid #EDE0C8", background: "#FAF8F4" }}
+                onFocus={(e) => (e.target.style.borderColor = "#C9A84C")}
+                onBlur={(e) => (e.target.style.borderColor = "#EDE0C8")}
               />
               <button
                 onClick={() => handleBid(Number(customAmount))}
                 disabled={!customAmount || Number(customAmount) < minBid}
-                className="bg-[#F0F2F5] rounded-xl px-4 font-semibold text-[#1C1C1E] disabled:opacity-40 transition-opacity"
+                className="rounded-xl px-4 font-semibold disabled:opacity-40 transition-opacity"
+                style={{ background: "#F5F0E8", color: "#B8922A" }}
               >
                 Ставить
               </button>
             </div>
-            <p className="text-[11px] text-[#767676] text-center mt-3">
-              Вы: <span className="font-medium text-[#1C1C1E]">{user.name}</span>
+            <p className="text-[11px] text-[#B8A070] text-center mt-3">
+              Вы: <span className="font-medium text-[#1C1A16]">{user.name}</span>
             </p>
           </>
         )}
@@ -145,28 +150,28 @@ export function LotScreen({ lot, user, onBack, onBid }: {
           <p className="text-sm text-[#767676] leading-relaxed mb-4">{lot.description}</p>
 
           {/* Price Block */}
-          <div className="bg-[#F0F2F5] rounded-2xl p-4 mb-4">
+          <div className="rounded-2xl p-4 mb-4" style={{ background: "#FAF7F0", border: "1px solid #EDE0C8" }}>
             <div className="flex justify-between items-start mb-3">
               <div>
-                <p className="text-xs text-[#767676] mb-0.5">Текущая ставка</p>
-                <p className="text-[28px] font-bold text-[#2787F5] leading-none">{formatPrice(lot.currentPrice)}</p>
+                <p className="text-xs text-[#B8A070] mb-0.5">Текущая ставка</p>
+                <p className="text-[28px] font-bold leading-none" style={{ color: "#B8922A" }}>{formatPrice(lot.currentPrice)}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-[#767676] mb-0.5">Шаг</p>
-                <p className="text-[15px] font-semibold text-[#1C1C1E]">+{formatPrice(lot.step)}</p>
+                <p className="text-xs text-[#B8A070] mb-0.5">Шаг</p>
+                <p className="text-[15px] font-semibold text-[#1C1A16]">+{formatPrice(lot.step)}</p>
               </div>
             </div>
             {leader && (
-              <div className="flex items-center gap-2 border-t border-[#E0E0E0] pt-3">
-                <div className="w-8 h-8 rounded-full bg-[#2787F5] text-white flex items-center justify-center text-xs font-bold">
+              <div className="flex items-center gap-2 pt-3" style={{ borderTop: "1px solid #EDE0C8" }}>
+                <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-bold" style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}>
                   {leader.userAvatar}
                 </div>
                 <div>
-                  <p className="text-[11px] text-[#767676]">Лидирует</p>
-                  <p className="text-[13px] font-semibold text-[#1C1C1E]">{leader.userName}</p>
+                  <p className="text-[11px] text-[#B8A070]">Лидирует</p>
+                  <p className="text-[13px] font-semibold text-[#1C1A16]">{leader.userName}</p>
                 </div>
                 {leader.userId === user.id && (
-                  <span className="ml-auto text-xs bg-[#4CAF50]/15 text-[#2E7D32] font-medium px-2 py-0.5 rounded-full">Это вы!</span>
+                  <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "#C9A84C22", color: "#B8922A" }}>Это вы!</span>
                 )}
               </div>
             )}
@@ -182,14 +187,14 @@ export function LotScreen({ lot, user, onBack, onBid }: {
           )}
 
           {lot.status === "finished" && lot.winnerName && (
-            <div className="bg-[#E8F5E9] rounded-2xl p-4 mb-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#4CAF50] text-white flex items-center justify-center">
+            <div className="rounded-2xl p-4 mb-4 flex items-center gap-3" style={{ background: "#FDF9F0", border: "1px solid #EDE0C8" }}>
+              <div className="w-10 h-10 rounded-full text-white flex items-center justify-center" style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}>
                 <Icon name="Trophy" size={18} />
               </div>
               <div>
-                <p className="text-xs text-[#4CAF50] font-medium">Победитель</p>
-                <p className="font-bold text-[#1C1C1E]">{lot.winnerName}</p>
-                <p className="text-sm text-[#767676]">{formatPrice(lot.currentPrice)}</p>
+                <p className="text-xs font-medium" style={{ color: "#B8922A" }}>Победитель</p>
+                <p className="font-bold text-[#1C1A16]">{lot.winnerName}</p>
+                <p className="text-sm text-[#B8A070]">{formatPrice(lot.currentPrice)}</p>
               </div>
             </div>
           )}
@@ -202,15 +207,15 @@ export function LotScreen({ lot, user, onBack, onBid }: {
             ) : (
               <div className="space-y-2">
                 {lot.bids.slice(0, 10).map((bid, i) => (
-                  <div key={bid.id} className={`flex items-center gap-3 p-3 rounded-xl ${i === 0 ? "bg-[#E3F2FD]" : "bg-white border border-[#F0F0F0]"}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i === 0 ? "bg-[#2787F5] text-white" : "bg-[#E8E8E8] text-[#767676]"}`}>
+                  <div key={bid.id} className="flex items-center gap-3 p-3 rounded-xl" style={i === 0 ? { background: "#FDF9F0", border: "1px solid #EDE0C8" } : { background: "white", border: "1px solid #F0EBE0" }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white" style={i === 0 ? { background: "linear-gradient(135deg, #C9A84C, #E8C96B)" } : { background: "#EDE0C8", color: "#B8A070" }}>
                       {bid.userAvatar}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-[#1C1C1E] truncate">{bid.userName}</p>
-                      <p className="text-[11px] text-[#767676]">{formatTime(bid.createdAt)}</p>
+                      <p className="text-[13px] font-semibold text-[#1C1A16] truncate">{bid.userName}</p>
+                      <p className="text-[11px] text-[#B8A070]">{formatTime(bid.createdAt)}</p>
                     </div>
-                    <p className={`text-[14px] font-bold shrink-0 ${i === 0 ? "text-[#2787F5]" : "text-[#1C1C1E]"}`}>
+                    <p className="text-[14px] font-bold shrink-0" style={{ color: i === 0 ? "#B8922A" : "#1C1A16" }}>
                       {formatPrice(bid.amount)}
                     </p>
                   </div>
@@ -225,7 +230,8 @@ export function LotScreen({ lot, user, onBack, onBid }: {
         <div className="px-4 pb-6 pt-3 border-t border-[#E8E8E8] bg-white shrink-0">
           <button
             onClick={() => setShowBidModal(true)}
-            className="w-full bg-[#2787F5] text-white rounded-xl py-3.5 font-bold text-[16px] shadow-lg shadow-[#2787F5]/20 active:opacity-80 transition-opacity"
+            className="w-full text-white rounded-xl py-3.5 font-bold text-[16px] active:opacity-80 transition-opacity"
+            style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)", boxShadow: "0 4px 16px #C9A84C40" }}
           >
             Сделать ставку
           </button>
