@@ -32,6 +32,17 @@ export function LotCard({ lot, onClick }: { lot: Lot; onClick: () => void }) {
           className="w-full h-44 object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+        {lot.video && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative flex items-center justify-center">
+              <span className="absolute w-14 h-14 rounded-full animate-ping" style={{ background: "#C9A84C", opacity: 0.25 }} />
+              <span className="absolute w-10 h-10 rounded-full animate-ping" style={{ background: "#C9A84C", opacity: 0.15, animationDelay: "0.5s" }} />
+              <div className="relative w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "rgba(201,168,76,0.82)", backdropFilter: "blur(4px)" }}>
+                <svg width="18" height="20" viewBox="0 0 18 20" fill="white"><path d="M2 1.5L16 10L2 18.5V1.5Z" /></svg>
+              </div>
+            </div>
+          </div>
+        )}
         <span className={`absolute top-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full ${status.color}`}>
           {status.label}
         </span>
