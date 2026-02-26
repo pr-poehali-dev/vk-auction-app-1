@@ -207,7 +207,7 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     setVideoName(file.name);
 
     const UPLOAD_URL = "https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e";
-    const CHUNK_SIZE = 3 * 1024 * 1024; // 3 МБ (base64 ~4МБ, в лимите платформы)
+    const CHUNK_SIZE = 1 * 1024 * 1024; // 1 МБ (base64 ~1.3МБ)
 
     const api = async (body: object) => {
       const r = await fetch(UPLOAD_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
