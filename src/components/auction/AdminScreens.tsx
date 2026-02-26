@@ -197,37 +197,37 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     setForm((f) => ({ ...f, [key]: val }));
   }
 
-  function handleVideoFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleVideoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setVideoUploading(true);
     setUploadProgress(0);
     setVideoName(file.name);
 
-    const reader = new FileReader();
-    reader.onprogress = (ev) => {
-      if (ev.lengthComputable) setUploadProgress(Math.round((ev.loaded / ev.total) * 40));
-    };
-    reader.onload = () => {
-      const b64 = (reader.result as string).split(",")[1];
-      const body = JSON.stringify({ filename: file.name, data: b64, contentType: file.type });
+    // 1. Получаем presigned URL с бекенда
+    const res = await fetch("https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename: file.name, contentType: file.type }),
+    });
+    const { uploadUrl, cdnUrl } = await res.json();
 
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", "https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e");
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.upload.onprogress = (ev) => {
-        if (ev.lengthComputable) setUploadProgress(40 + Math.round((ev.loaded / ev.total) * 55));
-      };
-      xhr.onload = () => {
-        const json = JSON.parse(xhr.responseText);
-        if (json.url) set("video", json.url);
-        setUploadProgress(100);
-        setVideoUploading(false);
-      };
-      xhr.onerror = () => setVideoUploading(false);
-      xhr.send(body);
+    // 2. Грузим файл напрямую в S3 с прогрессом
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", uploadUrl);
+    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable) setUploadProgress(Math.round((ev.loaded / ev.total) * 100));
     };
-    reader.readAsDataURL(file);
+    xhr.onload = () => {
+      if (xhr.status === 200 || xhr.status === 204) {
+        set("video", cdnUrl);
+        setUploadProgress(100);
+      }
+      setVideoUploading(false);
+    };
+    xhr.onerror = () => setVideoUploading(false);
+    xhr.send(file);
   }
 
   function handleSave() {

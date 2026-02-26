@@ -1,12 +1,13 @@
 """
-Загрузка видео-файла в S3. Принимает base64-encoded файл, сохраняет в CDN.
-POST / — { "filename": "video.mp4", "data": "<base64>", "contentType": "video/mp4" }
+Генерирует presigned URL для загрузки видео напрямую в S3 с браузера.
+POST / — { "filename": "video.mp4", "contentType": "video/mp4" }
+Возвращает { "uploadUrl": "...", "cdnUrl": "..." }
 """
 import json
 import os
-import base64
 import uuid
 import boto3
+from botocore.config import Config
 
 CORS = {
     "Access-Control-Allow-Origin": "*",
@@ -21,13 +22,8 @@ def handler(event: dict, context) -> dict:
 
     body = json.loads(event.get("body") or "{}")
     filename = body.get("filename", "video.mp4")
-    data_b64 = body.get("data", "")
     content_type = body.get("contentType", "video/mp4")
 
-    if not data_b64:
-        return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "Нет данных файла"})}
-
-    file_data = base64.b64decode(data_b64)
     ext = filename.rsplit(".", 1)[-1] if "." in filename else "mp4"
     key = f"videos/{uuid.uuid4()}.{ext}"
 
@@ -36,8 +32,14 @@ def handler(event: dict, context) -> dict:
         endpoint_url="https://bucket.poehali.dev",
         aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
         aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+        config=Config(signature_version="s3v4"),
     )
-    s3.put_object(Bucket="files", Key=key, Body=file_data, ContentType=content_type)
+
+    upload_url = s3.generate_presigned_url(
+        "put_object",
+        Params={"Bucket": "files", "Key": key, "ContentType": content_type},
+        ExpiresIn=3600,
+    )
 
     cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
-    return {"statusCode": 200, "headers": CORS, "body": json.dumps({"url": cdn_url})}
+    return {"statusCode": 200, "headers": CORS, "body": json.dumps({"uploadUrl": upload_url, "cdnUrl": cdn_url})}
