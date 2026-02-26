@@ -140,80 +140,70 @@ export default function Index() {
 
   if (vkUser.isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0F0D0A" }}>
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF8F4]">
         <div className="text-center flex flex-col items-center gap-5">
           <img
             src="https://cdn.poehali.dev/projects/0a068cc6-e718-493c-b038-60253ef8dd25/bucket/e8607ced-0dd6-499e-ad13-b8e50e125d2f.jpg"
             alt="Joylots"
-            className="w-20 h-20 rounded-2xl object-contain"
-            style={{ filter: "drop-shadow(0 0 18px #C9A84C88)" }}
+            className="w-20 h-20 object-contain"
           />
           <div>
-            <p className="font-bold text-2xl tracking-widest" style={{ fontFamily: "'Cormorant Garamond', serif", color: "#C9A84C", letterSpacing: "0.18em" }}>JOYLOTS</p>
-            <p className="text-xs mt-1" style={{ color: "#6B5C2E" }}>Аукцион</p>
+            <p className="font-bold text-2xl" style={{ fontFamily: "'Cormorant Garamond', serif", color: "#B8922A", letterSpacing: "0.18em" }}>JOYLOTS</p>
+            <p className="text-xs mt-1 text-[#B8A070]">Аукцион</p>
           </div>
-          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#C9A84C", borderTopColor: "transparent" }} />
+          <div className="w-7 h-7 border-2 border-t-transparent rounded-full animate-spin border-[#C9A84C]" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "#0F0D0A" }}>
+    <div className="min-h-screen flex items-center justify-center bg-[#EDE8DF]">
       <style>{`
         @keyframes slideUp {
           from { transform: translateY(100%); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
-        @keyframes goldShimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
       `}</style>
 
       {/* Phone shell */}
       <div
-        className="relative w-full flex flex-col overflow-hidden"
+        className="relative w-full bg-[#F7F4EF] flex flex-col overflow-hidden"
         style={{
           maxWidth: 390,
           height: "100svh",
           maxHeight: 844,
           borderRadius: 28,
           fontFamily: "'Golos Text', sans-serif",
-          background: "#1A1711",
-          boxShadow: "0 0 60px #C9A84C22, 0 30px 80px #00000088",
-          border: "1px solid #2E2920",
+          boxShadow: "0 20px 60px #00000030, 0 0 0 1px #D4BF8A44",
         }}
       >
         {/* Joylots header */}
-        <div
-          className="px-4 py-2.5 flex items-center justify-between shrink-0"
-          style={{ background: "#0F0D0A", borderBottom: "1px solid #2E2920" }}
-        >
+        <div className="bg-white px-4 py-2.5 flex items-center justify-between shrink-0 border-b border-[#EDE8DF]">
           <div className="flex items-center gap-2.5">
             <img
               src="https://cdn.poehali.dev/projects/0a068cc6-e718-493c-b038-60253ef8dd25/bucket/e8607ced-0dd6-499e-ad13-b8e50e125d2f.jpg"
               alt="Joylots"
-              className="w-7 h-7 rounded-lg object-contain"
+              className="w-7 h-7 object-contain"
             />
             <span
-              className="font-bold tracking-widest text-[15px]"
-              style={{ fontFamily: "'Cormorant Garamond', serif", color: "#C9A84C", letterSpacing: "0.15em" }}
+              className="font-bold text-[16px]"
+              style={{ fontFamily: "'Cormorant Garamond', serif", color: "#B8922A", letterSpacing: "0.15em" }}
             >
               JOYLOTS
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Icon name="Signal" size={13} style={{ color: "#6B5C2E" }} />
-            <Icon name="Battery" size={13} style={{ color: "#6B5C2E" }} />
+            <Icon name="Signal" size={13} className="text-[#C5B89A]" />
+            <Icon name="Battery" size={13} className="text-[#C5B89A]" />
           </div>
         </div>
 
         {/* Main content */}
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0" style={{ background: "#1A1711" }}>
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-[#F7F4EF]">
           {loading && screen === "catalog" ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3" style={{ color: "#6B5C2E" }}>
-              <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#C9A84C", borderTopColor: "transparent" }} />
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 text-[#B8A070]">
+              <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin border-[#C9A84C]" />
               <p className="text-sm">Загружаем аукционы…</p>
             </div>
           ) : (
