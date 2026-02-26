@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot, User, Screen } from "@/types/auction";
 import { formatPrice, formatTime, getStatusLabel, useTimer } from "@/components/auction/lotUtils";
@@ -107,21 +107,30 @@ export function LotScreen({ lot, user, onBack, onBid }: {
 }) {
   const [showBidModal, setShowBidModal] = useState(false);
   const [videoKey, setVideoKey] = useState(0);
+  const [videoPlaying, setVideoPlaying] = useState(false);
+  const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ms = useTimer(lot.endsAt);
-
-  // Авторестарт плеера за 3 секунды до конца видео
-  useEffect(() => {
-    if (!lot.videoDuration || lot.videoDuration <= 0) return;
-    const restartAt = (lot.videoDuration - 3) * 1000;
-    if (restartAt <= 0) return;
-    const t = setTimeout(() => setVideoKey((k) => k + 1), restartAt);
-    return () => clearTimeout(t);
-  }, [lot.videoDuration, videoKey]);
   const isActive = lot.status === "active" && ms > 0;
   const leader = lot.bids[0];
   const status = getStatusLabel(lot);
-
   const hasVideo = Boolean(lot.video && parseVKVideoEmbed(lot.video));
+
+  // Запускаем таймер авторестарта только после нажатия Play
+  function handlePlay() {
+    setVideoPlaying(true);
+    if (!lot.videoDuration || lot.videoDuration <= 0) return;
+    if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
+    const restartAt = (lot.videoDuration - 3) * 1000;
+    if (restartAt <= 0) return;
+    restartTimerRef.current = setTimeout(() => {
+      setVideoKey((k) => k + 1);
+      setVideoPlaying(false);
+    }, restartAt);
+  }
+
+  useEffect(() => {
+    return () => { if (restartTimerRef.current) clearTimeout(restartTimerRef.current); };
+  }, []);
 
   return (
     <div className="flex flex-col h-full">
@@ -136,16 +145,36 @@ export function LotScreen({ lot, user, onBack, onBid }: {
             {isActive && <TimerBadge endsAt={lot.endsAt} />}
           </div>
           <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
-            <iframe
-              key={videoKey}
-              src={parseVKVideoEmbed(lot.video!)!}
-              className="absolute inset-0 w-full h-full"
-              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-              allowFullScreen
-              frameBorder="0"
-            />
+            {!videoPlaying ? (
+              /* Постер — iframe не грузится, пока не нажат Play */
+              <div
+                className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                style={{ background: "#000" }}
+                onClick={handlePlay}
+              >
+                <img
+                  src={lot.image}
+                  alt={lot.title}
+                  className="absolute inset-0 w-full h-full object-cover opacity-60"
+                />
+                <div className="relative flex items-center justify-center">
+                  <span className="absolute w-16 h-16 rounded-full animate-ping opacity-20" style={{ background: "#C9A84C" }} />
+                  <div className="relative w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "rgba(201,168,76,0.9)", backdropFilter: "blur(4px)" }}>
+                    <svg width="20" height="24" viewBox="0 0 20 24" fill="white"><path d="M2 1.5L18 12L2 22.5V1.5Z" /></svg>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <iframe
+                key={videoKey}
+                src={parseVKVideoEmbed(lot.video!)! + "&autoplay=1"}
+                className="absolute inset-0 w-full h-full"
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                allowFullScreen
+                frameBorder="0"
+              />
+            )}
           </div>
-
         </div>
       ) : (
         <div className="relative shrink-0">
