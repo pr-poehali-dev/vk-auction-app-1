@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot } from "@/types/auction";
 import { formatPrice } from "@/components/auction/LotScreens";
@@ -187,11 +187,33 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     endsAt: lot?.endsAt ? (() => { const d = new Date(lot.endsAt); d.setMinutes(d.getMinutes() + 180); return d.toISOString().slice(0, 16); })() : "",
     antiSnipe: lot?.antiSnipe ?? true,
     antiSnipeMinutes: lot?.antiSnipeMinutes || 2,
-    videoDuration: lot?.videoDuration || 0,
   });
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoName, setVideoName] = useState(lot?.video ? "Видео загружено" : "");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function set(key: string, val: unknown) {
     setForm((f) => ({ ...f, [key]: val }));
+  }
+
+  async function handleVideoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setVideoUploading(true);
+    setVideoName(file.name);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const b64 = (reader.result as string).split(",")[1];
+      const res = await fetch("https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, data: b64, contentType: file.type }),
+      });
+      const json = await res.json();
+      if (json.url) set("video", json.url);
+      setVideoUploading(false);
+    };
+    reader.readAsDataURL(file);
   }
 
   function handleSave() {
@@ -201,7 +223,6 @@ export function AdminLotForm({ lot, onBack, onSave }: {
       startPrice: Number(form.startPrice),
       step: Number(form.step),
       antiSnipeMinutes: Number(form.antiSnipeMinutes),
-      videoDuration: Number(form.videoDuration) || undefined,
       endsAt: new Date(form.endsAt + ":00+03:00"),
     });
     onBack();
@@ -232,33 +253,29 @@ export function AdminLotForm({ lot, onBack, onSave }: {
         ))}
 
         <div>
-          <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">
-            Ссылка на видео ВКонтакте
-          </label>
-          <input
-            value={form.video}
-            onChange={(e) => set("video", e.target.value)}
-            placeholder="https://vk.com/video-12345_67890"
-            className="w-full border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#2787F5] bg-white"
-          />
-          <p className="text-[11px] text-[#767676] mt-1">Можно вставить ссылку или код &lt;iframe&gt; из ВКонтакте</p>
+          <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">Видео</label>
+          <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoFile} />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={videoUploading}
+            className="w-full rounded-xl py-3 text-[14px] font-medium flex items-center justify-center gap-2 transition-opacity active:opacity-70 disabled:opacity-50"
+            style={{ border: "1.5px dashed #C9A84C", background: "#FDF9F0", color: "#B8922A" }}
+          >
+            <Icon name={videoUploading ? "Loader" : "Upload"} size={16} className={videoUploading ? "animate-spin" : ""} />
+            {videoUploading ? "Загружаем видео…" : videoName ? "Заменить видео" : "Загрузить видео с телефона"}
+          </button>
+          {videoName && !videoUploading && (
+            <p className="text-[11px] text-[#B8A070] mt-1.5 flex items-center gap-1">
+              <Icon name="CheckCircle" size={11} className="text-green-500" />
+              {videoName}
+            </p>
+          )}
+          {form.video && !videoUploading && (
+            <button onClick={() => { set("video", ""); setVideoName(""); }} className="text-[11px] text-red-400 mt-1">
+              Удалить видео
+            </button>
+          )}
         </div>
-
-        {form.video && (
-          <div>
-            <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">
-              Длительность видео (секунды)
-            </label>
-            <input
-              type="number"
-              value={form.videoDuration || ""}
-              onChange={(e) => set("videoDuration", e.target.value)}
-              placeholder="Например: 187 (3 мин 7 сек)"
-              className="w-full border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#C9A84C] bg-white"
-            />
-            <p className="text-[11px] text-[#B8A070] mt-1">Видео перезапустится автоматически до появления рекламы</p>
-          </div>
-        )}
 
         <div>
           <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">Описание</label>

@@ -113,9 +113,13 @@ export function LotScreen({ lot, user, onBack, onBid }: {
   const isActive = lot.status === "active" && ms > 0;
   const leader = lot.bids[0];
   const status = getStatusLabel(lot);
-  const hasVideo = Boolean(lot.video && parseVKVideoEmbed(lot.video));
+  const vkEmbedUrl = lot.video ? parseVKVideoEmbed(lot.video) : null;
+  const isS3Video = Boolean(lot.video && lot.video.startsWith("https://cdn.poehali.dev"));
+  const hasVideo = Boolean(lot.video && (vkEmbedUrl || isS3Video));
 
-  // Таймер авторестарта — стартует по событию load на iframe
+  function handlePlay() { setVideoPlaying(true); }
+
+  // Для ВК iframe — таймер по onLoad
   function startRestartTimer() {
     if (!lot.videoDuration || lot.videoDuration <= 0) return;
     if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
@@ -125,10 +129,6 @@ export function LotScreen({ lot, user, onBack, onBid }: {
       setVideoKey((k) => k + 1);
       setVideoPlaying(false);
     }, restartAt);
-  }
-
-  function handlePlay() {
-    setVideoPlaying(true);
   }
 
   useEffect(() => {
@@ -148,18 +148,26 @@ export function LotScreen({ lot, user, onBack, onBid }: {
             {isActive && <TimerBadge endsAt={lot.endsAt} />}
           </div>
           <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
-            {!videoPlaying ? (
-              /* Постер — iframe не грузится, пока не нажат Play */
+            {isS3Video ? (
+              /* HTML5 плеер для своего видео — звук, без рекламы, авторестарт */
+              <video
+                key={videoKey}
+                className="absolute inset-0 w-full h-full bg-black"
+                controls
+                autoPlay
+                playsInline
+                onEnded={() => setVideoKey((k) => k + 1)}
+              >
+                <source src={lot.video} />
+              </video>
+            ) : !videoPlaying ? (
+              /* Постер для ВК — iframe не грузится до нажатия Play */
               <div
                 className="absolute inset-0 flex items-center justify-center cursor-pointer"
                 style={{ background: "#000" }}
                 onClick={handlePlay}
               >
-                <img
-                  src={lot.image}
-                  alt={lot.title}
-                  className="absolute inset-0 w-full h-full object-cover opacity-60"
-                />
+                <img src={lot.image} alt={lot.title} className="absolute inset-0 w-full h-full object-cover opacity-60" />
                 <div className="relative flex items-center justify-center">
                   <span className="absolute w-16 h-16 rounded-full animate-ping opacity-20" style={{ background: "#C9A84C" }} />
                   <div className="relative w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "rgba(201,168,76,0.9)", backdropFilter: "blur(4px)" }}>
@@ -168,9 +176,10 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                 </div>
               </div>
             ) : (
+              /* ВК iframe */
               <iframe
                 key={videoKey}
-                src={parseVKVideoEmbed(lot.video!)! + "&autoplay=1"}
+                src={vkEmbedUrl! + "&autoplay=1"}
                 className="absolute inset-0 w-full h-full"
                 allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                 allowFullScreen
