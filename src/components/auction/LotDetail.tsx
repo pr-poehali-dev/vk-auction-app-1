@@ -115,9 +115,8 @@ export function LotScreen({ lot, user, onBack, onBid }: {
   const status = getStatusLabel(lot);
   const hasVideo = Boolean(lot.video && parseVKVideoEmbed(lot.video));
 
-  // Запускаем таймер авторестарта только после нажатия Play
-  function handlePlay() {
-    setVideoPlaying(true);
+  // Таймер авторестарта — стартует по событию load на iframe
+  function startRestartTimer() {
     if (!lot.videoDuration || lot.videoDuration <= 0) return;
     if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
     const restartAt = (lot.videoDuration - 3) * 1000;
@@ -126,6 +125,10 @@ export function LotScreen({ lot, user, onBack, onBid }: {
       setVideoKey((k) => k + 1);
       setVideoPlaying(false);
     }, restartAt);
+  }
+
+  function handlePlay() {
+    setVideoPlaying(true);
   }
 
   useEffect(() => {
@@ -165,14 +168,19 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                 </div>
               </div>
             ) : (
-              <iframe
-                key={videoKey}
-                src={parseVKVideoEmbed(lot.video!)! + "&autoplay=1"}
-                className="absolute inset-0 w-full h-full"
-                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                allowFullScreen
-                frameBorder="0"
-              />
+              <>
+                <iframe
+                  key={videoKey}
+                  src={parseVKVideoEmbed(lot.video!)! + "&autoplay=1&mute=0"}
+                  className="absolute inset-0 w-full h-full"
+                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  frameBorder="0"
+                  onLoad={startRestartTimer}
+                />
+                {/* Прозрачный экран блокирует касания/клики по плееру */}
+                <div className="absolute inset-0" style={{ pointerEvents: "all" }} />
+              </>
             )}
           </div>
         </div>
