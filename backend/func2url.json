@@ -1,0 +1,5 @@
+{
+  "auction-admin": "https://functions.poehali.dev/c80458b7-040f-4c1e-afc7-9418aa34e00f",
+  "auction-lots": "https://functions.poehali.dev/a4ff5c7f-b025-48d2-bb94-cc014f6d2568",
+  "auction-bid": "https://functions.poehali.dev/ba11208b-97ba-4756-b7b9-eba826787166"
+}

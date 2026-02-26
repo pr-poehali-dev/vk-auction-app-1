@@ -1,5 +1,75 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+const API = {
+  lots: "https://functions.poehali.dev/a4ff5c7f-b025-48d2-bb94-cc014f6d2568",
+  bid: "https://functions.poehali.dev/ba11208b-97ba-4756-b7b9-eba826787166",
+  admin: "https://functions.poehali.dev/c80458b7-040f-4c1e-afc7-9418aa34e00f",
+};
+
+type ApiResponse = Record<string, unknown>;
+
+async function apiFetch(url: string, opts?: RequestInit): Promise<ApiResponse | ApiResponse[]> {
+  const r = await fetch(url, { headers: { "Content-Type": "application/json" }, ...opts });
+  return r.json() as Promise<ApiResponse | ApiResponse[]>;
+}
+
+function apiGetLots(): Promise<ApiResponse | ApiResponse[]> {
+  return apiFetch(API.lots);
+}
+
+function apiGetLot(id: number): Promise<ApiResponse | ApiResponse[]> {
+  return apiFetch(`${API.lots}?id=${id}`);
+}
+
+function apiPlaceBid(lotId: number, amount: number, user: User): Promise<ApiResponse | ApiResponse[]> {
+  return apiFetch(API.bid, {
+    method: "POST",
+    body: JSON.stringify({ lotId, amount, userId: user.id, userName: user.name, userAvatar: user.avatar }),
+  });
+}
+
+function apiAdmin(body: object): Promise<ApiResponse | ApiResponse[]> {
+  return apiFetch(API.admin, { method: "POST", body: JSON.stringify(body) });
+}
+
+// Convert API response → typed Lot
+function normalizeLot(r: ApiResponse): Lot {
+  const bidsRaw = r.bids as ApiResponse[] | undefined;
+  return {
+    id: String(r.id),
+    title: String(r.title ?? ""),
+    description: String(r.description ?? ""),
+    image: String(r.image ?? ""),
+    startPrice: Number(r.startPrice ?? r.start_price ?? 0),
+    currentPrice: Number(r.currentPrice ?? r.current_price ?? 0),
+    step: Number(r.step ?? 100),
+    endsAt: new Date(String(r.endsAt ?? r.ends_at ?? "")),
+    status: (r.status as Lot["status"]) ?? "active",
+    winnerId: r.winnerId as string | undefined ?? r.winner_id as string | undefined,
+    winnerName: r.winnerName as string | undefined ?? r.winner_name as string | undefined,
+    antiSnipe: Boolean(r.antiSnipe ?? r.anti_snipe ?? false),
+    antiSnipeMinutes: Number(r.antiSnipeMinutes ?? r.anti_snipe_minutes ?? 2),
+    paymentStatus: (r.paymentStatus ?? r.payment_status) as Lot["paymentStatus"],
+    leaderId: r.leaderId as string | undefined,
+    leaderName: r.leaderName as string | undefined,
+    leaderAvatar: r.leaderAvatar as string | undefined,
+    bidCount: Number(r.bidCount ?? 0),
+    bids: bidsRaw ? bidsRaw.map(normalizeBid) : [],
+  };
+}
+
+function normalizeBid(b: ApiResponse): Bid {
+  return {
+    id: String(b.id),
+    userId: String(b.userId ?? b.user_id ?? ""),
+    userName: String(b.userName ?? b.user_name ?? ""),
+    userAvatar: String(b.userAvatar ?? b.user_avatar ?? "??"),
+    amount: Number(b.amount),
+    createdAt: new Date(String(b.createdAt ?? b.created_at ?? "")),
+  };
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Screen = "catalog" | "lot" | "bids" | "profile" | "admin" | "admin-lot";
@@ -29,6 +99,11 @@ interface Lot {
   antiSnipeMinutes: number;
   bids: Bid[];
   paymentStatus?: "pending" | "paid" | "issued" | "cancelled";
+  // List-view extras (from API join)
+  leaderId?: string;
+  leaderName?: string;
+  leaderAvatar?: string;
+  bidCount?: number;
 }
 
 interface User {
@@ -45,66 +120,6 @@ const MOCK_USER: User = {
   avatar: "АС",
   isAdmin: true,
 };
-
-const initialLots: Lot[] = [
-  {
-    id: "l1",
-    title: "Картина «Вечер в Питере»",
-    description:
-      "Оригинальная картина маслом на холсте, 60×80 см. Автор — Анна Кузнецова. Работа написана в 2023 году, подпись автора на обороте.",
-    image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=600&q=80",
-    startPrice: 5000,
-    currentPrice: 8500,
-    step: 500,
-    endsAt: new Date(Date.now() + 2 * 60 * 60 * 1000 + 14 * 60 * 1000),
-    status: "active",
-    antiSnipe: true,
-    antiSnipeMinutes: 2,
-    bids: [
-      { id: "b3", userId: "u2", userName: "Мария П.", userAvatar: "МП", amount: 8500, createdAt: new Date(Date.now() - 5 * 60 * 1000) },
-      { id: "b2", userId: "u3", userName: "Дмитрий К.", userAvatar: "ДК", amount: 7500, createdAt: new Date(Date.now() - 20 * 60 * 1000) },
-      { id: "b1", userId: "u1", userName: "Алексей С.", userAvatar: "АС", amount: 6500, createdAt: new Date(Date.now() - 45 * 60 * 1000) },
-    ],
-  },
-  {
-    id: "l2",
-    title: "Handmade украшение «Рассвет»",
-    description:
-      "Браслет ручной работы из натуральных камней: горный хрусталь, розовый кварц. Длина 18 см, застёжка серебро 925.",
-    image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&q=80",
-    startPrice: 1200,
-    currentPrice: 2100,
-    step: 100,
-    endsAt: new Date(Date.now() + 5 * 60 * 1000),
-    status: "active",
-    antiSnipe: true,
-    antiSnipeMinutes: 2,
-    bids: [
-      { id: "b5", userId: "u1", userName: "Алексей С.", userAvatar: "АС", amount: 2100, createdAt: new Date(Date.now() - 2 * 60 * 1000) },
-      { id: "b4", userId: "u2", userName: "Мария П.", userAvatar: "МП", amount: 1800, createdAt: new Date(Date.now() - 10 * 60 * 1000) },
-    ],
-  },
-  {
-    id: "l3",
-    title: "Коллекционная монета СССР 1961",
-    description: "Монета 10 копеек 1961 года, состояние UNC. Оригинал, сертификат подлинности прилагается.",
-    image: "https://images.unsplash.com/photo-1561414927-6d86591d0c4f?w=600&q=80",
-    startPrice: 3000,
-    currentPrice: 12500,
-    step: 500,
-    endsAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    status: "finished",
-    winnerId: "u3",
-    winnerName: "Дмитрий К.",
-    antiSnipe: false,
-    antiSnipeMinutes: 2,
-    paymentStatus: "paid",
-    bids: [
-      { id: "b8", userId: "u3", userName: "Дмитрий К.", userAvatar: "ДК", amount: 12500, createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000) },
-      { id: "b7", userId: "u1", userName: "Алексей С.", userAvatar: "АС", amount: 11000, createdAt: new Date(Date.now() - 3.5 * 60 * 60 * 1000) },
-    ],
-  },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatTimer(ms: number): string {
@@ -223,7 +238,8 @@ function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; onClose
 // ─── Lot Card ──────────────────────────────────────────────────────────────────
 function LotCard({ lot, onClick }: { lot: Lot; onClick: () => void }) {
   const status = getStatusLabel(lot);
-  const leader = lot.bids[0];
+  const leaderName = lot.leaderName ?? lot.bids[0]?.userName;
+  const leaderAvatar = lot.leaderAvatar ?? lot.bids[0]?.userAvatar;
 
   return (
     <div
@@ -231,7 +247,7 @@ function LotCard({ lot, onClick }: { lot: Lot; onClick: () => void }) {
       className="bg-white rounded-2xl overflow-hidden border border-[#E8E8E8] cursor-pointer active:opacity-80 transition-opacity"
     >
       <div className="relative">
-        <img src={lot.image} alt={lot.title} className="w-full h-44 object-cover" />
+        <img src={lot.image || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80"} alt={lot.title} className="w-full h-44 object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         <span className={`absolute top-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full ${status.color}`}>
           {status.label}
@@ -249,12 +265,12 @@ function LotCard({ lot, onClick }: { lot: Lot; onClick: () => void }) {
             <p className="text-[11px] text-[#767676] mb-0.5">Текущая ставка</p>
             <p className="text-[18px] font-bold text-[#2787F5] leading-none">{formatPrice(lot.currentPrice)}</p>
           </div>
-          {leader && (
+          {leaderName && (
             <div className="flex items-center gap-1.5 text-xs text-[#767676]">
               <div className="w-6 h-6 rounded-full bg-[#2787F5]/10 text-[#2787F5] flex items-center justify-center text-[10px] font-bold">
-                {leader.userAvatar}
+                {leaderAvatar ?? "??"}
               </div>
-              <span className="max-w-[80px] truncate">{leader.userName}</span>
+              <span className="max-w-[80px] truncate">{leaderName}</span>
             </div>
           )}
         </div>
@@ -527,11 +543,12 @@ function ProfileScreen({ user, lots }: { user: User; lots: Lot[] }) {
 }
 
 // ─── Screen: Admin ─────────────────────────────────────────────────────────────
-function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus }: {
+function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopLot }: {
   lots: Lot[];
   onEditLot: (id: string) => void;
   onNewLot: () => void;
   onUpdateStatus: (id: string, status: Lot["paymentStatus"]) => void;
+  onStopLot: (id: string) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -576,7 +593,7 @@ function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus }: {
           {[
             { label: "Активных", val: lots.filter((l) => l.status === "active").length, color: "text-[#4CAF50]" },
             { label: "Завершённых", val: lots.filter((l) => l.status === "finished").length, color: "text-[#767676]" },
-            { label: "Всего ставок", val: lots.reduce((s, l) => s + l.bids.length, 0), color: "text-[#2787F5]" },
+            { label: "Всего ставок", val: lots.reduce((s, l) => s + (l.bidCount ?? l.bids.length), 0), color: "text-[#2787F5]" },
           ].map((s) => (
             <div key={s.label} className="bg-white border border-[#E8E8E8] rounded-xl p-3 text-center">
               <p className={`text-[20px] font-bold ${s.color}`}>{s.val}</p>
@@ -609,7 +626,7 @@ function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus }: {
                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${getStatusLabel(lot).color}`}>
                     {getStatusLabel(lot).label}
                   </span>
-                  <span className="text-[11px] text-[#767676]">{lot.bids.length} ставок</span>
+                  <span className="text-[11px] text-[#767676]">{lot.bidCount ?? lot.bids.length} ставок</span>
                 </div>
               </div>
               <Icon
@@ -654,7 +671,10 @@ function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus }: {
                     Редактировать
                   </button>
                   {lot.status === "active" && (
-                    <button className="flex-1 flex items-center justify-center gap-1.5 bg-[#FFEBEE] rounded-xl py-2 text-sm text-[#C62828] font-medium">
+                    <button
+                      onClick={() => onStopLot(lot.id)}
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-[#FFEBEE] rounded-xl py-2 text-sm text-[#C62828] font-medium"
+                    >
                       <Icon name="Square" size={14} />
                       Остановить
                     </button>
@@ -858,100 +878,106 @@ function BottomNav({ screen, onNav, isAdmin }: { screen: Screen; onNav: (s: Scre
 // ─── Main App ──────────────────────────────────────────────────────────────────
 export default function Index() {
   const [screen, setScreen] = useState<Screen>("catalog");
-  const [lots, setLots] = useState<Lot[]>(initialLots);
-  const [activeLotId, setActiveLotId] = useState<string | null>(null);
+  const [lots, setLots] = useState<Lot[]>([]);
+  const [activeLot, setActiveLot] = useState<Lot | null>(null);
   const [editingLotId, setEditingLotId] = useState<string | null | "new">(null);
+  const [loading, setLoading] = useState(true);
   const user = MOCK_USER;
 
-  // Auto-finish lots
-  useEffect(() => {
-    const id = setInterval(() => {
-      setLots((prev) =>
-        prev.map((l) => {
-          if (l.status === "active" && l.endsAt.getTime() <= Date.now()) {
-            const winner = l.bids[0];
-            return {
-              ...l,
-              status: "finished" as const,
-              winnerId: winner?.userId,
-              winnerName: winner?.userName,
-              paymentStatus: "pending" as const,
-            };
-          }
-          return l;
-        })
-      );
-    }, 2000);
-    return () => clearInterval(id);
+  // Load lots list from API
+  const loadLots = useCallback(async () => {
+    try {
+      const data = await apiGetLots();
+      if (Array.isArray(data)) {
+        setLots(data.map(normalizeLot));
+      }
+    } catch {
+      // keep previous state on error
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  function handleBid(lotId: string, amount: number): string {
-    let result = "ok";
-    setLots((prev) =>
-      prev.map((l) => {
-        if (l.id !== lotId) return l;
-        if (l.status !== "active") {
-          result = "Аукцион уже завершён";
-          return l;
-        }
-        if (amount < l.currentPrice + l.step) {
-          result = `Ставка слишком маленькая. Минимум: ${formatPrice(l.currentPrice + l.step)}`;
-          return l;
-        }
+  useEffect(() => {
+    loadLots();
+    const id = setInterval(loadLots, 15000); // refresh every 15s
+    return () => clearInterval(id);
+  }, [loadLots]);
 
-        const now = new Date();
-        const newBid: Bid = {
-          id: `b${Date.now()}`,
-          userId: user.id,
-          userName: "Алексей С.",
-          userAvatar: "АС",
-          amount,
-          createdAt: now,
-        };
-
-        // Anti-snipe: extend if bid in last N minutes
-        let endsAt = l.endsAt;
-        if (l.antiSnipe) {
-          const msLeft = l.endsAt.getTime() - now.getTime();
-          if (msLeft > 0 && msLeft < l.antiSnipeMinutes * 60 * 1000) {
-            endsAt = new Date(l.endsAt.getTime() + l.antiSnipeMinutes * 60 * 1000);
-          }
-        }
-
-        return { ...l, currentPrice: amount, endsAt, bids: [newBid, ...l.bids] };
-      })
-    );
-    return result;
+  // Load single lot (with bids)
+  async function loadLot(id: string) {
+    try {
+      const data = await apiGetLot(Number(id));
+      if (!Array.isArray(data) && data && !data.error) {
+        setActiveLot(normalizeLot(data));
+      }
+    } catch { /* ignore */ }
   }
 
-  function handleSaveLot(data: Partial<Lot>) {
-    if (editingLotId === "new") {
-      const newLot: Lot = {
-        id: `l${Date.now()}`,
-        title: data.title || "",
-        description: data.description || "",
-        image: data.image || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
-        startPrice: data.startPrice || 1000,
-        currentPrice: data.startPrice || 1000,
-        step: data.step || 100,
-        endsAt: data.endsAt || new Date(Date.now() + 24 * 60 * 60 * 1000),
-        status: "active",
-        antiSnipe: data.antiSnipe ?? true,
-        antiSnipeMinutes: data.antiSnipeMinutes || 2,
-        bids: [],
-        paymentStatus: "pending",
-      };
-      setLots((p) => [newLot, ...p]);
-    } else if (editingLotId) {
-      setLots((p) => p.map((l) => (l.id === editingLotId ? { ...l, ...data } : l)));
+  // Poll active lot every 5s for live updates
+  useEffect(() => {
+    if (screen !== "lot" || !activeLot) return;
+    const id = setInterval(() => loadLot(activeLot.id), 5000);
+    return () => clearInterval(id);
+  }, [screen, activeLot?.id]);
+
+  async function handleBid(lotId: string, amount: number): Promise<string> {
+    try {
+      const res = await apiPlaceBid(Number(lotId), amount, user) as ApiResponse;
+      if (res.error) return String(res.error);
+      // Refresh both lot detail and list
+      await Promise.all([loadLot(lotId), loadLots()]);
+      return "ok";
+    } catch {
+      return "Ошибка сети. Попробуйте ещё раз.";
     }
   }
 
-  const activeLot = lots.find((l) => l.id === activeLotId) || null;
+  async function handleSaveLot(data: Partial<Lot>) {
+    if (editingLotId === "new") {
+      await apiAdmin({
+        action: "create",
+        title: data.title,
+        description: data.description,
+        image: data.image,
+        startPrice: data.startPrice,
+        step: data.step,
+        endsAt: data.endsAt?.toISOString(),
+        antiSnipe: data.antiSnipe,
+        antiSnipeMinutes: data.antiSnipeMinutes,
+      });
+    } else if (editingLotId) {
+      await apiAdmin({
+        action: "update",
+        lotId: Number(editingLotId),
+        title: data.title,
+        description: data.description,
+        image: data.image,
+        step: data.step,
+        endsAt: data.endsAt?.toISOString(),
+        antiSnipe: data.antiSnipe,
+        antiSnipeMinutes: data.antiSnipeMinutes,
+      });
+    }
+    await loadLots();
+  }
+
+  async function handleUpdateStatus(id: string, status: Lot["paymentStatus"]) {
+    await apiAdmin({ action: "update", lotId: Number(id), paymentStatus: status });
+    setLots((p) => p.map((l) => l.id === id ? { ...l, paymentStatus: status } : l));
+  }
+
+  async function handleStopLot(id: string) {
+    await apiAdmin({ action: "stop", lotId: Number(id) });
+    await loadLots();
+  }
+
   const editingLot = editingLotId === "new" ? null : lots.find((l) => l.id === editingLotId) || null;
 
   function goLot(id: string) {
-    setActiveLotId(id);
+    const found = lots.find((l) => l.id === id) || null;
+    setActiveLot(found);
+    loadLot(id);
     setScreen("lot");
   }
 
@@ -991,31 +1017,46 @@ export default function Index() {
 
         {/* Main content */}
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-          {screen === "catalog" && <CatalogScreen lots={lots} onLot={goLot} />}
-          {screen === "lot" && activeLot && (
-            <LotScreen
-              lot={activeLot}
-              user={user}
-              onBack={() => setScreen("catalog")}
-              onBid={handleBid}
-            />
-          )}
-          {screen === "bids" && <BidsScreen lots={lots} user={user} onLot={goLot} />}
-          {screen === "profile" && <ProfileScreen user={user} lots={lots} />}
-          {screen === "admin" && (
-            <AdminScreen
-              lots={lots}
-              onEditLot={(id) => { setEditingLotId(id); setScreen("admin-lot"); }}
-              onNewLot={() => { setEditingLotId("new"); setScreen("admin-lot"); }}
-              onUpdateStatus={(id, s) => setLots((p) => p.map((l) => l.id === id ? { ...l, paymentStatus: s } : l))}
-            />
-          )}
-          {screen === "admin-lot" && (
-            <AdminLotForm
-              lot={editingLot}
-              onBack={() => setScreen("admin")}
-              onSave={handleSaveLot}
-            />
+          {loading && screen === "catalog" ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 text-[#767676]">
+              <div className="w-8 h-8 border-2 border-[#2787F5] border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm">Загружаем аукционы…</p>
+            </div>
+          ) : (
+            <>
+              {screen === "catalog" && <CatalogScreen lots={lots} onLot={goLot} />}
+              {screen === "lot" && activeLot && (
+                <LotScreen
+                  lot={activeLot}
+                  user={user}
+                  onBack={() => { setScreen("catalog"); loadLots(); }}
+                  onBid={handleBid}
+                />
+              )}
+              {screen === "lot" && !activeLot && (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-[#2787F5] border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+              {screen === "bids" && <BidsScreen lots={lots} user={user} onLot={goLot} />}
+              {screen === "profile" && <ProfileScreen user={user} lots={lots} />}
+              {screen === "admin" && (
+                <AdminScreen
+                  lots={lots}
+                  onEditLot={(id) => { setEditingLotId(id); setScreen("admin-lot"); }}
+                  onNewLot={() => { setEditingLotId("new"); setScreen("admin-lot"); }}
+                  onUpdateStatus={handleUpdateStatus}
+                  onStopLot={handleStopLot}
+                />
+              )}
+              {screen === "admin-lot" && (
+                <AdminLotForm
+                  lot={editingLot}
+                  onBack={() => setScreen("admin")}
+                  onSave={handleSaveLot}
+                />
+              )}
+            </>
           )}
         </div>
 
