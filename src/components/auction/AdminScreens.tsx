@@ -193,6 +193,7 @@ export function AdminLotForm({ lot, onBack, onSave }: {
   const isS3Video = lot?.video?.startsWith("https://cdn.poehali.dev");
   const [videoName, setVideoName] = useState(isS3Video ? "Видео загружено (CDN)" : lot?.video ? "ВК-видео" : "");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoUrlRef = useRef<string>(lot?.video || "");
 
   function set(key: string, val: unknown) {
     setForm((f) => ({ ...f, [key]: val }));
