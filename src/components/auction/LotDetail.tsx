@@ -168,19 +168,15 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                 </div>
               </div>
             ) : (
-              <>
-                <iframe
-                  key={videoKey}
-                  src={parseVKVideoEmbed(lot.video!)! + "&autoplay=1&mute=0"}
-                  className="absolute inset-0 w-full h-full"
-                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                  allowFullScreen
-                  frameBorder="0"
-                  onLoad={startRestartTimer}
-                />
-                {/* Прозрачный экран блокирует касания/клики по плееру */}
-                <div className="absolute inset-0" style={{ pointerEvents: "all" }} />
-              </>
+              <iframe
+                key={videoKey}
+                src={parseVKVideoEmbed(lot.video!)! + "&autoplay=1"}
+                className="absolute inset-0 w-full h-full"
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                allowFullScreen
+                frameBorder="0"
+                onLoad={startRestartTimer}
+              />
             )}
           </div>
         </div>
