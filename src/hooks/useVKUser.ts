@@ -18,6 +18,13 @@ const FALLBACK_USER: VKUser = {
   isLoading: false,
 };
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ]);
+}
+
 export function useVKUser(): VKUser {
   const [user, setUser] = useState<VKUser>({ ...FALLBACK_USER, isLoading: true });
 
@@ -26,7 +33,7 @@ export function useVKUser(): VKUser {
       try {
         bridge.send("VKWebAppInit");
 
-        const userInfo = await bridge.send("VKWebAppGetUserInfo");
+        const userInfo = await withTimeout(bridge.send("VKWebAppGetUserInfo"), 3000);
         const name = [userInfo.first_name, userInfo.last_name].filter(Boolean).join(" ");
         const initials = [userInfo.first_name?.[0], userInfo.last_name?.[0]].filter(Boolean).join("");
 
