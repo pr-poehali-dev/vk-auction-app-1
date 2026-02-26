@@ -7,6 +7,12 @@ import { TimerBadge } from "@/components/auction/LotCard";
 // ─── VK Video Player ──────────────────────────────────────────────────────────
 export function parseVKVideoEmbed(url: string): string | null {
   if (!url) return null;
+  // Извлечь src из вставленного iframe кода
+  const iframeSrc = url.match(/src=["']([^"']+)["']/);
+  if (iframeSrc) return iframeSrc[1];
+  // Прямая ссылка vkvideo.ru или vk.com video_ext
+  if (url.includes("video_ext.php") || url.includes("vkvideo.ru")) return url;
+  // Ссылка вида vk.com/video-123_456
   const matchDirect = url.match(/vk\.com\/video(-?\d+_\d+)/);
   if (matchDirect) {
     return `https://vk.com/video_ext.php?oid=${matchDirect[1].split("_")[0]}&id=${matchDirect[1].split("_")[1]}&hd=2`;
@@ -15,7 +21,6 @@ export function parseVKVideoEmbed(url: string): string | null {
   if (matchZ) {
     return `https://vk.com/video_ext.php?oid=${matchZ[1].split("_")[0]}&id=${matchZ[1].split("_")[1]}&hd=2`;
   }
-  if (url.includes("video_ext.php")) return url;
   return null;
 }
 
