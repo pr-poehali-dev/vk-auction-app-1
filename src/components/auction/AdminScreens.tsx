@@ -217,7 +217,6 @@ export function AdminLotForm({ lot, onBack, onSave }: {
 
     // 2. Грузим чанками
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    const parts: { PartNumber: number; ETag: string }[] = [];
 
     const toBase64 = (blob: Blob): Promise<string> =>
       new Promise((res, rej) => {
@@ -230,13 +229,12 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     for (let i = 0; i < totalChunks; i++) {
       const chunk = file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
       const data = await toBase64(chunk);
-      const { etag } = await api({ action: "chunk", key, uploadId, partNumber: i + 1, data });
-      parts.push({ PartNumber: i + 1, ETag: etag });
-      setUploadProgress(Math.round(((i + 1) / totalChunks) * 100));
+      await api({ action: "chunk", key, uploadId, partNumber: i + 1, data });
+      setUploadProgress(Math.round(((i + 1) / totalChunks) * 95));
     }
 
     // 3. Завершаем загрузку
-    const { url } = await api({ action: "complete", key, uploadId, parts });
+    const { url } = await api({ action: "complete", key, uploadId, totalParts: totalChunks, contentType: file.type });
     if (url) {
       videoUrlRef.current = url;
       set("video", url);

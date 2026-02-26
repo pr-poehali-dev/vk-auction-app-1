@@ -1,14 +1,15 @@
 """
-Multipart загрузка видео в S3 по частям (чанкам по 5МБ).
-POST / action=init     — начать загрузку { filename, contentType }
-POST / action=chunk    — загрузить часть { key, uploadId, partNumber, data(base64) }
-POST / action=complete — завершить { key, uploadId, parts:[{PartNumber, ETag}] }
-POST / action=abort    — отменить { key, uploadId }
+Загрузка видео в S3 чанками (5МБ base64 JSON).
+action=init     — начать { filename, contentType } → { uploadId, key }
+action=chunk    — { uploadId, key, partNumber, data(base64) } → { ok }
+action=complete — { uploadId, key, contentType } → { url }
+action=abort    — { uploadId, key } → { ok }
 """
 import json
 import os
 import uuid
 import base64
+import glob as _glob
 import boto3
 
 CORS = {
@@ -18,6 +19,7 @@ CORS = {
 }
 
 BUCKET = "files"
+TMP = "/tmp"
 
 
 def get_s3():
@@ -29,49 +31,71 @@ def get_s3():
     )
 
 
+def ok(data: dict):
+    return {"statusCode": 200, "headers": CORS, "body": json.dumps(data)}
+
+
 def handler(event: dict, context) -> dict:
     if event.get("httpMethod") == "OPTIONS":
         return {"statusCode": 200, "headers": CORS, "body": ""}
 
     body = json.loads(event.get("body") or "{}")
     action = body.get("action")
-    s3 = get_s3()
 
     if action == "init":
         filename = body.get("filename", "video.mp4")
-        content_type = body.get("contentType", "video/mp4")
         ext = filename.rsplit(".", 1)[-1] if "." in filename else "mp4"
+        upload_id = str(uuid.uuid4())
         key = f"videos/{uuid.uuid4()}.{ext}"
-        resp = s3.create_multipart_upload(Bucket=BUCKET, Key=key, ContentType=content_type)
-        return {"statusCode": 200, "headers": CORS, "body": json.dumps({
-            "uploadId": resp["UploadId"],
-            "key": key,
-        })}
+        return ok({"uploadId": upload_id, "key": key})
 
     elif action == "chunk":
-        key = body["key"]
         upload_id = body["uploadId"]
         part_number = int(body["partNumber"])
         data = base64.b64decode(body["data"])
-        resp = s3.upload_part(
-            Bucket=BUCKET, Key=key, UploadId=upload_id,
-            PartNumber=part_number, Body=data,
-        )
-        return {"statusCode": 200, "headers": CORS, "body": json.dumps({"etag": resp["ETag"]})}
+        chunk_path = f"{TMP}/{upload_id}_{part_number:04d}.part"
+        with open(chunk_path, "wb") as f:
+            f.write(data)
+        return ok({"ok": True, "part": part_number})
 
     elif action == "complete":
-        key = body["key"]
         upload_id = body["uploadId"]
-        parts = body["parts"]
-        s3.complete_multipart_upload(
-            Bucket=BUCKET, Key=key, UploadId=upload_id,
-            MultipartUpload={"Parts": parts},
+        key = body["key"]
+        content_type = body.get("contentType", "video/mp4")
+        total_parts = int(body.get("totalParts", 0))
+
+        # Собираем чанки в правильном порядке
+        parts = sorted(
+            _glob.glob(f"{TMP}/{upload_id}_*.part"),
+            key=lambda p: int(p.rsplit("_", 1)[-1].replace(".part", ""))
         )
+        if not parts:
+            return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "no parts found"})}
+
+        # Конкатенируем в один файл
+        merged_path = f"{TMP}/{upload_id}.bin"
+        with open(merged_path, "wb") as out:
+            for p in parts:
+                with open(p, "rb") as f:
+                    out.write(f.read())
+
+        # Заливаем в S3
+        s3 = get_s3()
+        with open(merged_path, "rb") as f:
+            s3.put_object(Bucket=BUCKET, Key=key, Body=f.read(), ContentType=content_type)
+
+        # Чистим временные файлы
+        for p in parts:
+            os.remove(p)
+        os.remove(merged_path)
+
         cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
-        return {"statusCode": 200, "headers": CORS, "body": json.dumps({"url": cdn_url})}
+        return ok({"url": cdn_url})
 
     elif action == "abort":
-        s3.abort_multipart_upload(Bucket=BUCKET, Key=body["key"], UploadId=body["uploadId"])
-        return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True})}
+        upload_id = body.get("uploadId", "")
+        for p in _glob.glob(f"{TMP}/{upload_id}_*.part"):
+            os.remove(p)
+        return ok({"ok": True})
 
     return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "unknown action"})}
