@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot, User, Screen } from "@/types/auction";
 import { formatPrice, formatTime, getStatusLabel, useTimer } from "@/components/auction/lotUtils";
@@ -108,6 +108,15 @@ export function LotScreen({ lot, user, onBack, onBid }: {
   const [showBidModal, setShowBidModal] = useState(false);
   const [videoKey, setVideoKey] = useState(0);
   const ms = useTimer(lot.endsAt);
+
+  // Авторестарт плеера за 3 секунды до конца видео
+  useEffect(() => {
+    if (!lot.videoDuration || lot.videoDuration <= 0) return;
+    const restartAt = (lot.videoDuration - 3) * 1000;
+    if (restartAt <= 0) return;
+    const t = setTimeout(() => setVideoKey((k) => k + 1), restartAt);
+    return () => clearTimeout(t);
+  }, [lot.videoDuration, videoKey]);
   const isActive = lot.status === "active" && ms > 0;
   const leader = lot.bids[0];
   const status = getStatusLabel(lot);
@@ -136,15 +145,7 @@ export function LotScreen({ lot, user, onBack, onBid }: {
               frameBorder="0"
             />
           </div>
-          {/* Кнопка перезапуска */}
-          <button
-            onClick={() => setVideoKey((k) => k + 1)}
-            className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white transition-opacity active:opacity-70"
-            style={{ background: "rgba(201,168,76,0.85)", backdropFilter: "blur(4px)" }}
-          >
-            <Icon name="RotateCcw" size={12} />
-            Смотреть снова
-          </button>
+
         </div>
       ) : (
         <div className="relative shrink-0">

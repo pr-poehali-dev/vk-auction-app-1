@@ -37,18 +37,20 @@ def handler(event: dict, context) -> dict:
         description = body.get("description", "").replace("'", "''")
         image = body.get("image", "").replace("'", "''")
         video = body.get("video", "").replace("'", "''")
+        video_duration = body.get("videoDuration")
         start_price = int(body.get("startPrice", 1000))
         step = int(body.get("step", 100))
         ends_at = body.get("endsAt", "")
         anti_snipe = "true" if body.get("antiSnipe", True) else "false"
         anti_snipe_min = int(body.get("antiSnipeMinutes", 2))
+        vd_sql = f", {int(video_duration)}" if video_duration else ", NULL"
 
         cur.execute(f"""
             INSERT INTO {SCHEMA}.lots
-              (title, description, image, video, start_price, current_price, step, ends_at, anti_snipe, anti_snipe_minutes)
+              (title, description, image, video, start_price, current_price, step, ends_at, anti_snipe, anti_snipe_minutes, video_duration)
             VALUES
               ('{title}', '{description}', '{image}', '{video}', {start_price}, {start_price}, {step},
-               '{ends_at}', {anti_snipe}, {anti_snipe_min})
+               '{ends_at}', {anti_snipe}, {anti_snipe_min}{vd_sql})
             RETURNING id
         """)
         new_id = cur.fetchone()[0]
@@ -80,6 +82,9 @@ def handler(event: dict, context) -> dict:
             fields.append(f"anti_snipe = {val}")
         if "antiSnipeMinutes" in body:
             fields.append(f"anti_snipe_minutes = {int(body['antiSnipeMinutes'])}")
+        if "videoDuration" in body:
+            vd = body["videoDuration"]
+            fields.append(f"video_duration = {int(vd)}" if vd else "video_duration = NULL")
         if "paymentStatus" in body:
             ps = body["paymentStatus"].replace("'", "''")
             fields.append(f"payment_status = '{ps}'")

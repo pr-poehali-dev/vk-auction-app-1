@@ -25,11 +25,12 @@ export function LotCard({ lot, onClick }: { lot: Lot; onClick: () => void }) {
       className="bg-white rounded-2xl overflow-hidden cursor-pointer active:opacity-80 transition-opacity"
       style={{ boxShadow: "0 1px 8px #C9A84C18, 0 0 0 1px #EDE0C8" }}
     >
-      <div className="relative">
+      <div className="relative overflow-hidden">
         <img
           src={lot.image || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80"}
           alt={lot.title}
           className="w-full h-44 object-cover"
+          style={{ animation: lot.status === "active" ? "kenBurns 8s ease-in-out infinite alternate" : "none" }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         {lot.video && (

@@ -187,6 +187,7 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     endsAt: lot?.endsAt ? (() => { const d = new Date(lot.endsAt); d.setMinutes(d.getMinutes() + 180); return d.toISOString().slice(0, 16); })() : "",
     antiSnipe: lot?.antiSnipe ?? true,
     antiSnipeMinutes: lot?.antiSnipeMinutes || 2,
+    videoDuration: lot?.videoDuration || 0,
   });
 
   function set(key: string, val: unknown) {
@@ -200,6 +201,7 @@ export function AdminLotForm({ lot, onBack, onSave }: {
       startPrice: Number(form.startPrice),
       step: Number(form.step),
       antiSnipeMinutes: Number(form.antiSnipeMinutes),
+      videoDuration: Number(form.videoDuration) || undefined,
       endsAt: new Date(form.endsAt + ":00+03:00"),
     });
     onBack();
@@ -239,8 +241,24 @@ export function AdminLotForm({ lot, onBack, onSave }: {
             placeholder="https://vk.com/video-12345_67890"
             className="w-full border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#2787F5] bg-white"
           />
-          <p className="text-[11px] text-[#767676] mt-1">Скопируй ссылку из ВКонтакте → Видео → Поделиться → Скопировать ссылку</p>
+          <p className="text-[11px] text-[#767676] mt-1">Можно вставить ссылку или код &lt;iframe&gt; из ВКонтакте</p>
         </div>
+
+        {form.video && (
+          <div>
+            <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">
+              Длительность видео (секунды)
+            </label>
+            <input
+              type="number"
+              value={form.videoDuration || ""}
+              onChange={(e) => set("videoDuration", e.target.value)}
+              placeholder="Например: 187 (3 мин 7 сек)"
+              className="w-full border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#C9A84C] bg-white"
+            />
+            <p className="text-[11px] text-[#B8A070] mt-1">Видео перезапустится автоматически до появления рекламы</p>
+          </div>
+        )}
 
         <div>
           <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">Описание</label>
