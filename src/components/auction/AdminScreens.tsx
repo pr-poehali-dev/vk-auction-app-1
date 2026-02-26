@@ -206,34 +206,46 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     setUploadProgress(0);
     setVideoName(file.name);
 
-    // Грузим файл напрямую через XHR — реальный прогресс
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e");
-    xhr.setRequestHeader("X-Filename", encodeURIComponent(file.name));
-    xhr.setRequestHeader("X-Content-Type", file.type);
-    xhr.upload.onprogress = (ev) => {
-      if (ev.lengthComputable) setUploadProgress(Math.round((ev.loaded / ev.total) * 100));
-    };
-    xhr.onload = () => {
-      try {
-        const json = JSON.parse(xhr.responseText);
-        if (json.url) {
-          videoUrlRef.current = json.url;
-          set("video", json.url);
-          setUploadProgress(100);
-        } else {
-          alert("Ошибка загрузки: " + xhr.responseText);
-        }
-      } catch {
-        alert("Ошибка сервера при загрузке видео");
-      }
-      setVideoUploading(false);
-    };
-    xhr.onerror = () => {
-      alert("Ошибка соединения при загрузке видео");
-      setVideoUploading(false);
-    };
-    xhr.send(file);
+    const UPLOAD_URL = "https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e";
+    const CHUNK_SIZE = 5 * 1024 * 1024; // 5 МБ
+
+    const api = (body: object) =>
+      fetch(UPLOAD_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+
+    // 1. Инициализируем multipart upload
+    const { uploadId, key } = await api({ action: "init", filename: file.name, contentType: file.type });
+
+    // 2. Грузим чанками
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const parts: { PartNumber: number; ETag: string }[] = [];
+
+    const toBase64 = (blob: Blob): Promise<string> =>
+      new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res((r.result as string).split(",")[1]);
+        r.onerror = rej;
+        r.readAsDataURL(blob);
+      });
+
+    for (let i = 0; i < totalChunks; i++) {
+      const chunk = file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+      const data = await toBase64(chunk);
+      const { etag } = await api({ action: "chunk", key, uploadId, partNumber: i + 1, data });
+      parts.push({ PartNumber: i + 1, ETag: etag });
+      setUploadProgress(Math.round(((i + 1) / totalChunks) * 100));
+    }
+
+    // 3. Завершаем загрузку
+    const { url } = await api({ action: "complete", key, uploadId, parts });
+    if (url) {
+      videoUrlRef.current = url;
+      set("video", url);
+      setUploadProgress(100);
+    } else {
+      await api({ action: "abort", key, uploadId });
+      alert("Ошибка завершения загрузки");
+    }
+    setVideoUploading(false);
   }
 
   function handleSave() {
