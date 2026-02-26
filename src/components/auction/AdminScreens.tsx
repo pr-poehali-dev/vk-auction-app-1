@@ -184,7 +184,7 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     video: lot?.video || "",
     startPrice: lot?.startPrice || 1000,
     step: lot?.step || 100,
-    endsAt: lot?.endsAt ? new Date(lot.endsAt).toISOString().slice(0, 16) : "",
+    endsAt: lot?.endsAt ? (() => { const d = new Date(lot.endsAt); d.setMinutes(d.getMinutes() + 180); return d.toISOString().slice(0, 16); })() : "",
     antiSnipe: lot?.antiSnipe ?? true,
     antiSnipeMinutes: lot?.antiSnipeMinutes || 2,
   });
@@ -200,7 +200,7 @@ export function AdminLotForm({ lot, onBack, onSave }: {
       startPrice: Number(form.startPrice),
       step: Number(form.step),
       antiSnipeMinutes: Number(form.antiSnipeMinutes),
-      endsAt: new Date(form.endsAt),
+      endsAt: new Date(form.endsAt + ":00+03:00"),
     });
     onBack();
   }
