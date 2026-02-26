@@ -239,6 +239,7 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     if (!form.title || !form.endsAt) return;
     onSave({
       ...form,
+      video: videoUrlRef.current,
       startPrice: Number(form.startPrice),
       step: Number(form.step),
       antiSnipeMinutes: Number(form.antiSnipeMinutes),
