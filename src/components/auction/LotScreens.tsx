@@ -204,6 +204,39 @@ export function CatalogScreen({ lots, onLot }: { lots: Lot[]; onLot: (id: string
   );
 }
 
+// ─── VK Video Player ──────────────────────────────────────────────────────────
+function parseVKVideoEmbed(url: string): string | null {
+  if (!url) return null;
+  // Формат: https://vk.com/video-12345_67890 или https://vk.com/video?z=video-12345_67890
+  const matchDirect = url.match(/vk\.com\/video(-?\d+_\d+)/);
+  if (matchDirect) {
+    return `https://vk.com/video_ext.php?oid=${matchDirect[1].split("_")[0]}&id=${matchDirect[1].split("_")[1]}&hd=2`;
+  }
+  const matchZ = url.match(/video(-?\d+_\d+)/);
+  if (matchZ) {
+    return `https://vk.com/video_ext.php?oid=${matchZ[1].split("_")[0]}&id=${matchZ[1].split("_")[1]}&hd=2`;
+  }
+  // Уже embed-ссылка
+  if (url.includes("video_ext.php")) return url;
+  return null;
+}
+
+function VKVideoPlayer({ url }: { url: string }) {
+  const embedUrl = parseVKVideoEmbed(url);
+  if (!embedUrl) return null;
+  return (
+    <div className="relative w-full mb-4 rounded-2xl overflow-hidden bg-black" style={{ aspectRatio: "16/9" }}>
+      <iframe
+        src={embedUrl}
+        className="absolute inset-0 w-full h-full"
+        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+        allowFullScreen
+        frameBorder="0"
+      />
+    </div>
+  );
+}
+
 // ─── Screen: Lot ───────────────────────────────────────────────────────────────
 export function LotScreen({ lot, user, onBack, onBid }: {
   lot: Lot;
@@ -217,19 +250,43 @@ export function LotScreen({ lot, user, onBack, onBid }: {
   const leader = lot.bids[0];
   const status = getStatusLabel(lot);
 
+  const hasVideo = Boolean(lot.video && parseVKVideoEmbed(lot.video));
+
   return (
     <div className="flex flex-col h-full">
-      <div className="relative shrink-0">
-        <img src={lot.image} alt={lot.title} className="w-full h-64 object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        <button onClick={onBack} className="absolute top-3 left-3 w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-sm">
-          <Icon name="ChevronLeft" size={20} />
-        </button>
-        <div className="absolute top-3 right-3 flex gap-1.5">
-          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${status.color}`}>{status.label}</span>
-          {isActive && <TimerBadge endsAt={lot.endsAt} />}
+      {/* Шапка: видео или фото */}
+      {hasVideo ? (
+        <div className="relative shrink-0 bg-black">
+          <button onClick={onBack} className="absolute top-3 left-3 z-10 w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-sm">
+            <Icon name="ChevronLeft" size={20} />
+          </button>
+          <div className="absolute top-3 right-3 z-10 flex gap-1.5">
+            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${status.color}`}>{status.label}</span>
+            {isActive && <TimerBadge endsAt={lot.endsAt} />}
+          </div>
+          <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
+            <iframe
+              src={parseVKVideoEmbed(lot.video!)!}
+              className="absolute inset-0 w-full h-full"
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+              allowFullScreen
+              frameBorder="0"
+            />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="relative shrink-0">
+          <img src={lot.image} alt={lot.title} className="w-full h-64 object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <button onClick={onBack} className="absolute top-3 left-3 w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-sm">
+            <Icon name="ChevronLeft" size={20} />
+          </button>
+          <div className="absolute top-3 right-3 flex gap-1.5">
+            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${status.color}`}>{status.label}</span>
+            {isActive && <TimerBadge endsAt={lot.endsAt} />}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto">
         <div className="px-4 pt-4">

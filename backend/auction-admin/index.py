@@ -36,6 +36,7 @@ def handler(event: dict, context) -> dict:
         title = body.get("title", "").replace("'", "''")
         description = body.get("description", "").replace("'", "''")
         image = body.get("image", "").replace("'", "''")
+        video = body.get("video", "").replace("'", "''")
         start_price = int(body.get("startPrice", 1000))
         step = int(body.get("step", 100))
         ends_at = body.get("endsAt", "")
@@ -44,9 +45,9 @@ def handler(event: dict, context) -> dict:
 
         cur.execute(f"""
             INSERT INTO {SCHEMA}.lots
-              (title, description, image, start_price, current_price, step, ends_at, anti_snipe, anti_snipe_minutes)
+              (title, description, image, video, start_price, current_price, step, ends_at, anti_snipe, anti_snipe_minutes)
             VALUES
-              ('{title}', '{description}', '{image}', {start_price}, {start_price}, {step},
+              ('{title}', '{description}', '{image}', '{video}', {start_price}, {start_price}, {step},
                '{ends_at}', {anti_snipe}, {anti_snipe_min})
             RETURNING id
         """)
@@ -67,6 +68,9 @@ def handler(event: dict, context) -> dict:
         if "image" in body:
             v = body["image"].replace("'", "''")
             fields.append(f"image = '{v}'")
+        if "video" in body:
+            v = body["video"].replace("'", "''")
+            fields.append(f"video = '{v}'")
         if "step" in body:
             fields.append(f"step = {int(body['step'])}")
         if "endsAt" in body:

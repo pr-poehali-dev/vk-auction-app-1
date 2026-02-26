@@ -49,6 +49,7 @@ def row_to_lot(row):
         "antiSnipeMinutes": row[12],
         "paymentStatus": row[13],
         "createdAt": row[14].isoformat() if row[14] else None,
+        "video": row[15] or "",
     }
 
 
@@ -81,7 +82,7 @@ def handler(event: dict, context) -> dict:
         cur.execute(f"""
             SELECT id, title, description, image, start_price, current_price, step,
                    ends_at, status, winner_id, winner_name, anti_snipe, anti_snipe_minutes,
-                   payment_status, created_at
+                   payment_status, created_at, COALESCE(video, '') as video
             FROM {SCHEMA}.lots WHERE id = {int(lot_id)}
         """)
         row = cur.fetchone()
@@ -105,7 +106,7 @@ def handler(event: dict, context) -> dict:
     cur.execute(f"""
         SELECT l.id, l.title, l.description, l.image, l.start_price, l.current_price, l.step,
                l.ends_at, l.status, l.winner_id, l.winner_name, l.anti_snipe, l.anti_snipe_minutes,
-               l.payment_status, l.created_at,
+               l.payment_status, l.created_at, COALESCE(l.video, '') as video,
                b.user_id as leader_id, b.user_name as leader_name, b.user_avatar as leader_avatar,
                (SELECT COUNT(*) FROM {SCHEMA}.bids WHERE lot_id = l.id) as bid_count
         FROM {SCHEMA}.lots l
@@ -120,11 +121,11 @@ def handler(event: dict, context) -> dict:
 
     lots = []
     for r in rows:
-        lot = row_to_lot(r[:15])
-        lot["leaderId"] = r[15]
-        lot["leaderName"] = r[16]
-        lot["leaderAvatar"] = r[17]
-        lot["bidCount"] = r[18]
+        lot = row_to_lot(r[:16])
+        lot["leaderId"] = r[16]
+        lot["leaderName"] = r[17]
+        lot["leaderAvatar"] = r[18]
+        lot["bidCount"] = r[19]
         lots.append(lot)
 
     return {"statusCode": 200, "headers": CORS, "body": json.dumps(lots)}

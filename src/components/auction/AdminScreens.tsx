@@ -181,6 +181,7 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     title: lot?.title || "",
     description: lot?.description || "",
     image: lot?.image || "",
+    video: lot?.video || "",
     startPrice: lot?.startPrice || 1000,
     step: lot?.step || 100,
     endsAt: lot?.endsAt ? new Date(lot.endsAt).toISOString().slice(0, 16) : "",
@@ -227,6 +228,19 @@ export function AdminLotForm({ lot, onBack, onSave }: {
             />
           </div>
         ))}
+
+        <div>
+          <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">
+            Ссылка на видео ВКонтакте
+          </label>
+          <input
+            value={form.video}
+            onChange={(e) => set("video", e.target.value)}
+            placeholder="https://vk.com/video-12345_67890"
+            className="w-full border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#2787F5] bg-white"
+          />
+          <p className="text-[11px] text-[#767676] mt-1">Скопируй ссылку из ВКонтакте → Видео → Поделиться → Скопировать ссылку</p>
+        </div>
 
         <div>
           <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">Описание</label>

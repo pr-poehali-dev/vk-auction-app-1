@@ -14,6 +14,7 @@ export interface Lot {
   title: string;
   description: string;
   image: string;
+  video?: string;
   startPrice: number;
   currentPrice: number;
   step: number;

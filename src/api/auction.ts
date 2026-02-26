@@ -50,6 +50,7 @@ export function normalizeLot(r: ApiResponse): Lot {
     title: String(r.title ?? ""),
     description: String(r.description ?? ""),
     image: String(r.image ?? ""),
+    video: String(r.video ?? ""),
     startPrice: Number(r.startPrice ?? r.start_price ?? 0),
     currentPrice: Number(r.currentPrice ?? r.current_price ?? 0),
     step: Number(r.step ?? 100),
