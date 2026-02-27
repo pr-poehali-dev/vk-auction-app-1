@@ -19,7 +19,7 @@ export function DesktopCatalog({ lots, user, onBid }: { lots: Lot[]; user: User;
   return (
     <div className="flex h-full gap-0">
       {/* Left: list */}
-      <div className="flex flex-col w-[340px] shrink-0 border-r border-[#EDE8DF] bg-[#F7F4EF]">
+      <div className="flex flex-col w-[480px] shrink-0 border-r border-[#EDE8DF] bg-[#F7F4EF]">
         <div className="px-5 pt-5 pb-3 bg-white border-b border-[#EDE8DF]">
           <h1 className="text-[22px] font-bold text-[#1C1A16] mb-3" style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.02em" }}>
             Лоты
@@ -37,22 +37,24 @@ export function DesktopCatalog({ lots, user, onBid }: { lots: Lot[]; user: User;
             ))}
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-[#C5B89A]">
               <Icon name="Inbox" size={36} className="mb-3 opacity-40" />
               <p className="text-sm">Лотов пока нет</p>
             </div>
           ) : (
-            filtered.map((l) => (
-              <DesktopLotCard
-                key={l.id}
-                lot={l}
-                onClick={() => setSelectedId(l.id)}
-                isActive={l.id === (selectedId ?? selectedLot?.id)}
-                isAdmin={user.isAdmin}
-              />
-            ))
+            <div className="grid grid-cols-2 gap-3 mt-1">
+              {filtered.map((l) => (
+                <DesktopLotCard
+                  key={l.id}
+                  lot={l}
+                  onClick={() => setSelectedId(l.id)}
+                  isActive={l.id === (selectedId ?? selectedLot?.id)}
+                  isAdmin={user.isAdmin}
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>
