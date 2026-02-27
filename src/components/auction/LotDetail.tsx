@@ -98,7 +98,7 @@ export function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; 
               </button>
             </div>
             <p className="text-[11px] text-[#B8A070] text-center mt-3">
-              Вы: <span className="font-medium text-[#1C1A16]">{user.name}</span>
+              Шаг аукциона: <span className="font-medium text-[#1C1A16]">{formatPrice(lot.step)}</span> · Вы: <span className="font-medium text-[#1C1A16]">{user.name}</span>
             </p>
           </>
         )}
@@ -165,7 +165,6 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                 key={videoKey}
                 className="absolute inset-0 w-full h-full bg-black"
                 controls
-                autoPlay
                 playsInline
                 onEnded={() => setVideoKey((k) => k + 1)}
               >

@@ -47,12 +47,12 @@ export function DesktopLotDetail({
       <div className="shrink-0 relative rounded-2xl overflow-hidden mb-4" style={{ aspectRatio: "16/9", background: "#000" }}>
         {hasVideo ? (
           isS3Video ? (
-            <video className="w-full h-full object-cover" controls autoPlay playsInline>
+            <video className="w-full h-full object-cover" controls playsInline>
               <source src={lot.video!} />
             </video>
           ) : (
             <iframe
-              src={vkEmbedUrl! + "&autoplay=1"}
+              src={vkEmbedUrl!}
               className="absolute inset-0 w-full h-full"
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
