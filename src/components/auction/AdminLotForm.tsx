@@ -17,7 +17,7 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
     video: lot?.video || "",
     startPrice: lot?.startPrice || 1000,
     step: lot?.step || 100,
-    endsAt: lot?.endsAt ? (() => { const d = new Date(lot.endsAt); d.setMinutes(d.getMinutes() + 180); return d.toISOString().slice(0, 16); })() : "",
+    endsAt: lot?.endsAt ? (() => { const d = new Date(lot.endsAt); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); })() : "",
     antiSnipe: lot?.antiSnipe ?? true,
     antiSnipeMinutes: lot?.antiSnipeMinutes || 2,
   });
