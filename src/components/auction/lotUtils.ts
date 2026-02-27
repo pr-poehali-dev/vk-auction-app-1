@@ -21,10 +21,35 @@ export function formatTime(d: Date): string {
 
 export function maskVKId(userId: string): string {
   if (!userId || userId === "guest") return "***";
-  // Числовой ID — показываем первые 3 цифры + *
   if (/^\d+$/.test(userId)) return userId.slice(0, 3) + "*";
-  // Текстовый slug — первые 3 символа + *
   return userId.slice(0, 3) + "*";
+}
+
+// Первое слово из полного имени (имя без фамилии)
+export function firstName(fullName: string): string {
+  if (!fullName) return "Участник";
+  return fullName.split(" ")[0];
+}
+
+// Ссылка на VK профиль: предпочитаем screenName, иначе числовой id
+export function vkProfileUrl(userId: string): string {
+  // userId может быть screenName (albert82a), id-prefixed (id32129039) или числом (32129039)
+  if (/^\d+$/.test(userId)) return `https://vk.com/id${userId}`;
+  return `https://vk.com/${userId}`;
+}
+
+// Дедупликация: для отображения последних ставок — один пользователь показывается один раз (максимальная ставка)
+export function deduplicateBids(bids: { id: string; userId: string; userName: string; userAvatar: string; amount: number; createdAt: Date }[], limit = 3) {
+  const seen = new Set<string>();
+  const result = [];
+  for (const b of bids) {
+    if (!seen.has(b.userId)) {
+      seen.add(b.userId);
+      result.push(b);
+    }
+    if (result.length >= limit) break;
+  }
+  return result;
 }
 
 export function getStatusLabel(lot: Lot) {

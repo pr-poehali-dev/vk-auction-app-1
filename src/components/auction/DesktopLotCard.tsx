@@ -1,6 +1,6 @@
 import Icon from "@/components/ui/icon";
 import type { Lot } from "@/types/auction";
-import { formatPrice, formatTimer, getStatusLabel, useTimer, maskVKId } from "@/components/auction/lotUtils";
+import { formatPrice, formatTimer, getStatusLabel, useTimer, firstName, vkProfileUrl, deduplicateBids } from "@/components/auction/lotUtils";
 
 export function DesktopTimerBadge({ endsAt }: { endsAt: Date }) {
   const ms = useTimer(endsAt);
@@ -88,15 +88,15 @@ export function DesktopLotCard({ lot, onClick, isActive: isSelected, isAdmin = f
               <span className="text-[10px] text-[#B8A070] uppercase tracking-wide">Последние ставки</span>
               {lot.bidCount != null && <span className="text-[10px] text-[#B8A070]">{lot.bidCount} {lot.bidCount === 1 ? "ставка" : lot.bidCount < 5 ? "ставки" : "ставок"}</span>}
             </div>
-            {lot.bids.slice(0, 3).map((b, i) => (
+            {deduplicateBids(lot.bids, 3).map((b, i) => (
               <div key={b.id} className="flex items-center gap-1.5">
                 <div className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0" style={{ background: i === 0 ? "#C9A84C" : "#D5CABC" }}>
                   {b.userAvatar}
                 </div>
                 {isAdmin ? (
-                  <a href={`https://vk.com/id${b.userId}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-[11px] flex-1 truncate underline decoration-dotted" style={{ color: "#2787F5" }}>{b.userName}</a>
+                  <a href={vkProfileUrl(b.userId)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-[11px] flex-1 truncate underline decoration-dotted" style={{ color: "#2787F5" }}>{b.userName}</a>
                 ) : (
-                  <span className="text-[11px] text-[#767676] flex-1 truncate">{maskVKId(b.userId)}</span>
+                  <span className="text-[11px] text-[#767676] flex-1 truncate">{firstName(b.userName)}</span>
                 )}
                 <span className="text-[11px] font-semibold shrink-0" style={{ color: i === 0 ? "#B8922A" : "#9A8E7A" }}>{formatPrice(b.amount)}</span>
               </div>

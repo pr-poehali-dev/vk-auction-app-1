@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot, User, Screen } from "@/types/auction";
-import { formatPrice, formatTime, getStatusLabel, useTimer, maskVKId } from "@/components/auction/lotUtils";
+import { formatPrice, formatTime, getStatusLabel, useTimer, firstName, vkProfileUrl } from "@/components/auction/lotUtils";
 import { TimerBadge } from "@/components/auction/LotCard";
 
 // ─── VK Video Player ──────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ export function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; 
               className="w-full text-white rounded-xl py-3.5 font-semibold text-[15px] mb-3 active:opacity-80 transition-opacity disabled:opacity-60"
               style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}
             >
-              {loading ? "Отправляем…" : `Повысить на шаг (${formatPrice(lot.step)})`}
+              {loading ? "Отправляем…" : `+${formatPrice(lot.step)} (до ${formatPrice(minBid)})`}
             </button>
             <div className="flex gap-2">
               <input
@@ -115,7 +115,6 @@ export function LotScreen({ lot, user, onBack, onBid }: {
   onBid: (lotId: string, amount: number) => Promise<string>;
 }) {
   const isAdmin = user.isAdmin;
-  const dn = (name: string, userId: string) => (isAdmin || userId === user.id) ? name : maskVKId(userId);
   const [showBidModal, setShowBidModal] = useState(false);
   const [videoKey, setVideoKey] = useState(0);
   const [videoPlaying, setVideoPlaying] = useState(false);
@@ -286,9 +285,9 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                     </div>
                     <div className="flex-1 min-w-0">
                       {isAdmin ? (
-                        <a href={`https://vk.com/id${bid.userId}`} target="_blank" rel="noreferrer" className="text-[13px] font-semibold truncate block underline decoration-dotted" style={{ color: "#2787F5" }}>{bid.userName}</a>
+                        <a href={vkProfileUrl(bid.userId)} target="_blank" rel="noreferrer" className="text-[13px] font-semibold truncate block underline decoration-dotted" style={{ color: "#2787F5" }}>{bid.userName}</a>
                       ) : (
-                        <p className="text-[13px] font-semibold text-[#1C1A16] truncate">{dn(bid.userName, bid.userId)}</p>
+                        <p className="text-[13px] font-semibold text-[#1C1A16] truncate">{bid.userId === user.id ? bid.userName : firstName(bid.userName)}</p>
                       )}
                       <p className="text-[11px] text-[#B8A070]">{formatTime(bid.createdAt)}</p>
                     </div>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot, User } from "@/types/auction";
-import { formatPrice, formatTime, getStatusLabel, useTimer, maskVKId } from "@/components/auction/lotUtils";
+import { formatPrice, formatTime, getStatusLabel, useTimer, firstName, vkProfileUrl } from "@/components/auction/lotUtils";
 import { parseVKVideoEmbed } from "@/components/auction/LotDetail";
 import { DesktopTimerBadge } from "@/components/auction/DesktopLotCard";
 
@@ -23,7 +23,6 @@ export function DesktopLotDetail({
   const status = getStatusLabel(lot);
   const leader = lot.bids[0];
   const isAdmin = user.isAdmin;
-  const dn = (name: string, userId: string) => (isAdmin || userId === user.id) ? name : maskVKId(userId);
   const vkEmbedUrl = lot.video ? parseVKVideoEmbed(lot.video) : null;
   const isS3Video = Boolean(lot.video?.startsWith("https://cdn.poehali.dev"));
   const hasVideo = Boolean(lot.video && (vkEmbedUrl || isS3Video));
@@ -92,9 +91,9 @@ export function DesktopLotDetail({
             <div>
               <p className="text-[11px] text-[#B8A070]">Лидирует</p>
               {isAdmin ? (
-                <a href={`https://vk.com/id${leader.userId}`} target="_blank" rel="noreferrer" className="text-[13px] font-semibold underline decoration-dotted" style={{ color: "#2787F5" }}>{leader.userName}</a>
+                <a href={vkProfileUrl(leader.userId)} target="_blank" rel="noreferrer" className="text-[13px] font-semibold underline decoration-dotted" style={{ color: "#2787F5" }}>{leader.userName}</a>
               ) : (
-                <p className="text-[13px] font-semibold text-[#1C1A16]">{dn(leader.userName, leader.userId)}</p>
+                <p className="text-[13px] font-semibold text-[#1C1A16]">{leader.userId === user.id ? leader.userName : firstName(leader.userName)}</p>
               )}
             </div>
             {leader.userId === user.id && (
@@ -144,7 +143,7 @@ export function DesktopLotDetail({
                 className="w-full text-white rounded-xl py-3 font-semibold text-[15px] mb-3 disabled:opacity-60 transition-opacity"
                 style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}
               >
-                {bidLoading ? "Отправляем…" : `+ шаг — ${formatPrice(minBid)}`}
+                {bidLoading ? "Отправляем…" : `+${formatPrice(lot.step)} (до ${formatPrice(minBid)})`}
               </button>
               <div className="flex gap-2">
                 <input
@@ -185,9 +184,9 @@ export function DesktopLotDetail({
                   {b.userAvatar}
                 </div>
                 {isAdmin ? (
-                  <a href={`https://vk.com/id${b.userId}`} target="_blank" rel="noreferrer" className="text-[13px] flex-1 truncate underline decoration-dotted" style={{ color: "#2787F5" }}>{b.userName}</a>
+                  <a href={vkProfileUrl(b.userId)} target="_blank" rel="noreferrer" className="text-[13px] flex-1 truncate underline decoration-dotted" style={{ color: "#2787F5" }}>{b.userName}</a>
                 ) : (
-                  <span className="text-[13px] text-[#1C1A16] flex-1 truncate">{dn(b.userName, b.userId)}</span>
+                  <span className="text-[13px] text-[#1C1A16] flex-1 truncate">{b.userId === user.id ? b.userName : firstName(b.userName)}</span>
                 )}
                 <span className="text-[13px] font-semibold" style={{ color: i === 0 ? "#B8922A" : "#767676" }}>{formatPrice(b.amount)}</span>
                 <span className="text-[11px] text-[#B8A070] w-16 text-right shrink-0">{formatTime(b.createdAt)}</span>
