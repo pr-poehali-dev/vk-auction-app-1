@@ -118,6 +118,25 @@ def handler(event: dict, context) -> dict:
         ORDER BY l.created_at DESC
     """)
     rows = cur.fetchall()
+
+    lot_ids = [r[0] for r in rows]
+    recent_bids = {}
+    if lot_ids:
+        ids_str = ",".join(str(i) for i in lot_ids)
+        cur.execute(f"""
+            SELECT id, lot_id, user_id, user_name, user_avatar, amount, created_at
+            FROM (
+                SELECT *, ROW_NUMBER() OVER (PARTITION BY lot_id ORDER BY amount DESC, created_at ASC) as rn
+                FROM {SCHEMA}.bids WHERE lot_id IN ({ids_str})
+            ) ranked WHERE rn <= 3
+            ORDER BY lot_id, amount DESC, created_at ASC
+        """)
+        for row in cur.fetchall():
+            lid = row[1]
+            if lid not in recent_bids:
+                recent_bids[lid] = []
+            recent_bids[lid].append(row_to_bid(row))
+
     conn.close()
 
     lots = []
@@ -127,6 +146,7 @@ def handler(event: dict, context) -> dict:
         lot["leaderName"] = r[18]
         lot["leaderAvatar"] = r[19]
         lot["bidCount"] = r[20]
+        lot["bids"] = recent_bids.get(lot["id"], [])
         lots.append(lot)
 
     return {"statusCode": 200, "headers": CORS, "body": json.dumps(lots)}
