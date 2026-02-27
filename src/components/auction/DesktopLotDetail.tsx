@@ -1,0 +1,201 @@
+import { useState } from "react";
+import Icon from "@/components/ui/icon";
+import type { Lot, User } from "@/types/auction";
+import { formatPrice, formatTime, getStatusLabel, useTimer, maskVKId } from "@/components/auction/lotUtils";
+import { parseVKVideoEmbed } from "@/components/auction/LotDetail";
+import { DesktopTimerBadge } from "@/components/auction/DesktopLotCard";
+
+export function DesktopLotDetail({
+  lot,
+  user,
+  onBid,
+}: {
+  lot: Lot;
+  user: User;
+  onBid: (lotId: string, amount: number) => Promise<string>;
+}) {
+  const [customAmount, setCustomAmount] = useState("");
+  const [bidResult, setBidResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [bidLoading, setBidLoading] = useState(false);
+  const ms = useTimer(lot.endsAt);
+  const isActive = lot.status === "active" && ms > 0;
+  const minBid = lot.currentPrice + lot.step;
+  const status = getStatusLabel(lot);
+  const leader = lot.bids[0];
+  const isAdmin = user.isAdmin;
+  const dn = (name: string, userId: string) => (isAdmin || userId === user.id) ? name : maskVKId(userId);
+  const vkEmbedUrl = lot.video ? parseVKVideoEmbed(lot.video) : null;
+  const isS3Video = Boolean(lot.video?.startsWith("https://cdn.poehali.dev"));
+  const hasVideo = Boolean(lot.video && (vkEmbedUrl || isS3Video));
+
+  async function handleBid(amount: number) {
+    setBidLoading(true);
+    setBidResult(null);
+    const res = await onBid(lot.id, amount);
+    if (res === "ok") {
+      setBidResult({ type: "success", text: `Ставка ${formatPrice(amount)} принята!` });
+      setCustomAmount("");
+    } else {
+      setBidResult({ type: "error", text: res });
+    }
+    setBidLoading(false);
+  }
+
+  return (
+    <div className="flex flex-col h-full overflow-y-auto">
+      {/* Media */}
+      <div className="shrink-0 relative rounded-2xl overflow-hidden mb-4" style={{ aspectRatio: "16/9", background: "#000" }}>
+        {hasVideo ? (
+          isS3Video ? (
+            <video className="w-full h-full object-cover" controls autoPlay playsInline>
+              <source src={lot.video!} />
+            </video>
+          ) : (
+            <iframe
+              src={vkEmbedUrl! + "&autoplay=1"}
+              className="absolute inset-0 w-full h-full"
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+              allowFullScreen
+              frameBorder="0"
+            />
+          )
+        ) : (
+          <img src={lot.image} alt={lot.title} className="w-full h-full object-cover" />
+        )}
+        <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${status.color}`}>{status.label}</span>
+          {isActive && <DesktopTimerBadge endsAt={lot.endsAt} />}
+        </div>
+      </div>
+
+      {/* Title + desc */}
+      <h2 className="text-[22px] font-bold text-[#1C1A16] mb-1" style={{ fontFamily: "'Cormorant Garamond', serif" }}>{lot.title}</h2>
+      <p className="text-sm text-[#B8A070] leading-relaxed mb-5">{lot.description}</p>
+
+      {/* Price block */}
+      <div className="rounded-2xl p-4 mb-4" style={{ background: "#FAF7F0", border: "1px solid #EDE0C8" }}>
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <p className="text-xs text-[#B8A070] mb-0.5">Текущая ставка</p>
+            <p className="text-[28px] font-bold leading-none" style={{ color: "#B8922A" }}>{formatPrice(lot.currentPrice)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-[#B8A070] mb-0.5">Шаг</p>
+            <p className="text-[15px] font-semibold text-[#1C1A16]">+{formatPrice(lot.step)}</p>
+          </div>
+        </div>
+        {leader && (
+          <div className="flex items-center gap-2 pt-3" style={{ borderTop: "1px solid #EDE0C8" }}>
+            <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-bold" style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}>
+              {leader.userAvatar}
+            </div>
+            <div>
+              <p className="text-[11px] text-[#B8A070]">Лидирует</p>
+              {isAdmin ? (
+                <a href={`https://vk.com/id${leader.userId}`} target="_blank" rel="noreferrer" className="text-[13px] font-semibold underline decoration-dotted" style={{ color: "#2787F5" }}>{leader.userName}</a>
+              ) : (
+                <p className="text-[13px] font-semibold text-[#1C1A16]">{dn(leader.userName, leader.userId)}</p>
+              )}
+            </div>
+            {leader.userId === user.id && (
+              <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "#C9A84C22", color: "#B8922A" }}>Это вы!</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {lot.antiSnipe && isActive && (
+        <div className="flex items-start gap-2 bg-[#FFF8E1] rounded-xl p-3 mb-4">
+          <Icon name="Shield" size={14} className="text-[#F59E0B] mt-0.5 shrink-0" />
+          <p className="text-xs text-[#92400E]">
+            Защита от снайпинга: ставка в последние {lot.antiSnipeMinutes} мин. продлит аукцион
+          </p>
+        </div>
+      )}
+
+      {lot.status === "finished" && lot.winnerName && (
+        <div className="rounded-2xl p-4 mb-4 flex items-center gap-3" style={{ background: "#FDF9F0", border: "1px solid #EDE0C8" }}>
+          <div className="w-10 h-10 rounded-full text-white flex items-center justify-center" style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}>
+            <Icon name="Trophy" size={18} />
+          </div>
+          <div>
+            <p className="text-xs font-medium" style={{ color: "#B8922A" }}>Победитель</p>
+            <p className="font-bold text-[#1C1A16]">{lot.winnerName}</p>
+            <p className="text-sm text-[#B8A070]">{formatPrice(lot.currentPrice)}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Bid area */}
+      {isActive && (
+        <div className="rounded-2xl p-4 mb-4" style={{ border: "1px solid #EDE0C8", background: "#fff" }}>
+          <p className="text-sm font-medium text-[#1C1A16] mb-3">Сделать ставку</p>
+          {bidResult ? (
+            <div className={`rounded-xl p-4 text-center ${bidResult.type === "success" ? "bg-[#E8F5E9] text-[#2E7D32]" : "bg-[#FFEBEE] text-[#C62828]"}`}>
+              <Icon name={bidResult.type === "success" ? "CheckCircle" : "XCircle"} size={24} className="mx-auto mb-2" />
+              <p className="font-semibold text-sm">{bidResult.text}</p>
+              <button onClick={() => setBidResult(null)} className="mt-2 text-xs underline opacity-70">Сделать ещё ставку</button>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => handleBid(minBid)}
+                disabled={bidLoading}
+                className="w-full text-white rounded-xl py-3 font-semibold text-[15px] mb-3 disabled:opacity-60 transition-opacity"
+                style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}
+              >
+                {bidLoading ? "Отправляем…" : `+ шаг — ${formatPrice(minBid)}`}
+              </button>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  placeholder={`Своя сумма (от ${minBid})`}
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  className="flex-1 rounded-xl px-3 py-2.5 text-[14px] outline-none"
+                  style={{ border: "1px solid #EDE0C8", background: "#FAF8F4" }}
+                  onFocus={(e) => (e.target.style.borderColor = "#C9A84C")}
+                  onBlur={(e) => (e.target.style.borderColor = "#EDE0C8")}
+                />
+                <button
+                  onClick={() => handleBid(Number(customAmount))}
+                  disabled={!customAmount || Number(customAmount) < minBid || bidLoading}
+                  className="rounded-xl px-4 font-semibold disabled:opacity-40 transition-opacity"
+                  style={{ background: "#F5F0E8", color: "#B8922A" }}
+                >
+                  Ставить
+                </button>
+              </div>
+              <p className="text-[11px] text-[#B8A070] text-center mt-3">
+                Вы: <span className="font-medium text-[#1C1A16]">{user.name}</span>
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Bid history */}
+      {lot.bids.length > 0 && (
+        <div>
+          <p className="text-[13px] font-semibold text-[#1C1A16] mb-2">История ставок</p>
+          <div className="space-y-2">
+            {lot.bids.slice(0, 10).map((b, i) => (
+              <div key={b.id} className="flex items-center gap-2 py-1.5" style={{ borderBottom: i < lot.bids.slice(0, 10).length - 1 ? "1px solid #EDE8DF" : "none" }}>
+                <div className="w-6 h-6 rounded-full text-white flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: i === 0 ? "#C9A84C" : "#D5CABC" }}>
+                  {b.userAvatar}
+                </div>
+                {isAdmin ? (
+                  <a href={`https://vk.com/id${b.userId}`} target="_blank" rel="noreferrer" className="text-[13px] flex-1 truncate underline decoration-dotted" style={{ color: "#2787F5" }}>{b.userName}</a>
+                ) : (
+                  <span className="text-[13px] text-[#1C1A16] flex-1 truncate">{dn(b.userName, b.userId)}</span>
+                )}
+                <span className="text-[13px] font-semibold" style={{ color: i === 0 ? "#B8922A" : "#767676" }}>{formatPrice(b.amount)}</span>
+                <span className="text-[11px] text-[#B8A070] w-16 text-right shrink-0">{formatTime(b.createdAt)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
