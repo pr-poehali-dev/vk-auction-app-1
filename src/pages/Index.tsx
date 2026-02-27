@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import bridge from "@vkontakte/vk-bridge";
 import { useVKUser } from "@/hooks/useVKUser";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 import type { Lot, User, Screen } from "@/types/auction";
 import { apiGetLots, apiGetLot, apiPlaceBid, apiAdmin, normalizeLot } from "@/api/auction";
 import { CatalogScreen, LotScreen, BidsScreen, ProfileScreen, BottomNav } from "@/components/auction/LotScreens";
 import { AdminScreen, AdminLotForm } from "@/components/auction/AdminScreens";
+import { DesktopLayout } from "@/components/auction/DesktopLayout";
 
 export default function Index() {
   const [screen, setScreen] = useState<Screen>("catalog");
@@ -14,6 +16,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const notifiedLots = useRef<Set<string>>(new Set());
   const vkUser = useVKUser();
+  const isDesktop = useIsDesktop();
   const vkUserId = vkUser.id;
   const user: User = {
     id: vkUserId,
@@ -155,6 +158,20 @@ export default function Index() {
           <div className="w-7 h-7 border-2 border-t-transparent rounded-full animate-spin border-[#C9A84C]" />
         </div>
       </div>
+    );
+  }
+
+  if (isDesktop) {
+    return (
+      <DesktopLayout
+        lots={lots}
+        user={user}
+        loading={loading}
+        onBid={handleBid}
+        onSaveLot={handleSaveLot}
+        onUpdateStatus={handleUpdateStatus}
+        onStopLot={handleStopLot}
+      />
     );
   }
 
