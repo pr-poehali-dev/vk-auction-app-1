@@ -294,7 +294,8 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
-    if (!form.title || !form.endsAt) return;
+    if (!form.title) { alert("Введите название лота"); return; }
+    if (!form.endsAt) { alert("Выберите дату и время окончания"); return; }
     setSaving(true);
     try {
       await onSave({
@@ -428,12 +429,26 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
 
         <div>
           <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">Дата и время окончания *</label>
-          <input
-            type="datetime-local"
-            value={form.endsAt}
-            onChange={(e) => set("endsAt", e.target.value)}
-            className="w-full border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#2787F5] bg-white"
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="date"
+              value={form.endsAt ? form.endsAt.slice(0, 10) : ""}
+              onChange={(e) => {
+                const timePart = form.endsAt ? form.endsAt.slice(11, 16) : "12:00";
+                set("endsAt", e.target.value ? `${e.target.value}T${timePart || "12:00"}` : "");
+              }}
+              className="w-full border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#2787F5] bg-white"
+            />
+            <input
+              type="time"
+              value={form.endsAt ? form.endsAt.slice(11, 16) : ""}
+              onChange={(e) => {
+                const datePart = form.endsAt ? form.endsAt.slice(0, 10) : new Date().toISOString().slice(0, 10);
+                set("endsAt", e.target.value ? `${datePart}T${e.target.value}` : "");
+              }}
+              className="w-full border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#2787F5] bg-white"
+            />
+          </div>
         </div>
 
         {/* Anti-snipe toggle */}
@@ -469,7 +484,7 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
 
         <button
           onClick={handleSave}
-          disabled={!form.title || !form.endsAt || saving || videoUploading}
+          disabled={saving || videoUploading}
           className="w-full bg-[#2787F5] text-white rounded-xl py-3.5 font-bold text-[16px] disabled:opacity-40 transition-opacity"
         >
           {saving ? "Сохраняем…" : isNew ? "Создать лот" : "Сохранить изменения"}
