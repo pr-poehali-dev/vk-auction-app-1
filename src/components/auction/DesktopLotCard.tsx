@@ -29,7 +29,7 @@ export function DesktopLotCard({ lot, onClick, isActive: isSelected, isAdmin = f
       }}
     >
       {/* Thumbnail */}
-      <div className="relative shrink-0 w-28 h-24 lg:w-40 lg:h-28 overflow-hidden rounded-l-2xl">
+      <div className="relative shrink-0 w-36 h-28 overflow-hidden rounded-l-2xl">
         {lot.video?.startsWith("https://cdn.poehali.dev") ? (
           <video
             src={lot.video + "#t=0.5"}
