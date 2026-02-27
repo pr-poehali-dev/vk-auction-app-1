@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot, User, Screen } from "@/types/auction";
-import { formatPrice, formatTimer, formatTime, getStatusLabel, useTimer, maskName } from "@/components/auction/lotUtils";
+import { formatPrice, formatTimer, formatTime, getStatusLabel, useTimer, maskVKId } from "@/components/auction/lotUtils";
 import { parseVKVideoEmbed } from "@/components/auction/LotDetail";
 import { BidsScreen, ProfileScreen } from "@/components/auction/UserScreens";
 import { AdminScreen, AdminLotForm } from "@/components/auction/AdminScreens";
@@ -21,7 +21,7 @@ function DesktopTimerBadge({ endsAt }: { endsAt: Date }) {
 function DesktopLotCard({ lot, onClick, isActive: isSelected, isAdmin = false }: { lot: Lot; onClick: () => void; isActive: boolean; isAdmin?: boolean }) {
   const status = getStatusLabel(lot);
   const leaderName = lot.leaderName ?? lot.bids[0]?.userName;
-  const dn = (name: string) => isAdmin ? name : maskName(name);
+  const dn = (name: string, userId: string) => isAdmin ? name : maskVKId(userId);
 
   return (
     <div
@@ -84,7 +84,7 @@ function DesktopLotCard({ lot, onClick, isActive: isSelected, isAdmin = false }:
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: "#C9A84C" }}>
                 {lot.leaderAvatar ?? lot.bids[0]?.userAvatar ?? "?"}
               </div>
-              <span className="max-w-[100px] truncate">{dn(leaderName ?? "")}</span>
+              <span className="max-w-[100px] truncate">{dn(leaderName ?? "", lot.leaderId ?? lot.bids[0]?.userId ?? "")}</span>
             </div>
           )}
         </div>
@@ -102,7 +102,7 @@ function DesktopLotCard({ lot, onClick, isActive: isSelected, isAdmin = false }:
                 {isAdmin ? (
                   <a href={`https://vk.com/id${b.userId}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-[12px] flex-1 truncate underline decoration-dotted" style={{ color: "#2787F5" }}>{b.userName}</a>
                 ) : (
-                  <span className="text-[12px] text-[#767676] flex-1 truncate">{dn(b.userName)}</span>
+                  <span className="text-[12px] text-[#767676] flex-1 truncate">{maskVKId(b.userId)}</span>
                 )}
                 <span className="text-[12px] font-semibold shrink-0" style={{ color: i === 0 ? "#B8922A" : "#9A8E7A" }}>{formatPrice(b.amount)}</span>
               </div>
@@ -133,7 +133,7 @@ function DesktopLotDetail({
   const status = getStatusLabel(lot);
   const leader = lot.bids[0];
   const isAdmin = user.isAdmin;
-  const dn = (name: string, userId: string) => (isAdmin || userId === user.id) ? name : maskName(name);
+  const dn = (name: string, userId: string) => (isAdmin || userId === user.id) ? name : maskVKId(userId);
   const vkEmbedUrl = lot.video ? parseVKVideoEmbed(lot.video) : null;
   const isS3Video = Boolean(lot.video?.startsWith("https://cdn.poehali.dev"));
   const hasVideo = Boolean(lot.video && (vkEmbedUrl || isS3Video));

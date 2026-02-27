@@ -19,12 +19,10 @@ export function formatTime(d: Date): string {
   return d.toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-export function maskName(name: string): string {
-  if (!name) return "***";
-  const parts = name.trim().split(" ");
-  return parts
-    .map((p) => (p.length <= 3 ? p[0] + "**" : p.slice(0, 3) + "*".repeat(Math.min(p.length - 3, 3))))
-    .join(" ");
+export function maskVKId(userId: string): string {
+  if (!userId) return "***";
+  const slug = /^\d+$/.test(userId) ? `id${userId}` : userId;
+  return slug.slice(0, 3) + "*";
 }
 
 export function getStatusLabel(lot: Lot) {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot, User, Screen } from "@/types/auction";
-import { formatPrice, formatTime, getStatusLabel, useTimer, maskName } from "@/components/auction/lotUtils";
+import { formatPrice, formatTime, getStatusLabel, useTimer, maskVKId } from "@/components/auction/lotUtils";
 import { TimerBadge } from "@/components/auction/LotCard";
 
 // ─── VK Video Player ──────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ export function LotScreen({ lot, user, onBack, onBid }: {
   onBid: (lotId: string, amount: number) => string;
 }) {
   const isAdmin = user.isAdmin;
-  const dn = (name: string) => isAdmin ? name : maskName(name);
+  const dn = (name: string, userId: string) => (isAdmin || userId === user.id) ? name : maskVKId(userId);
   const [showBidModal, setShowBidModal] = useState(false);
   const [videoKey, setVideoKey] = useState(0);
   const [videoPlaying, setVideoPlaying] = useState(false);
@@ -232,7 +232,7 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                   {isAdmin ? (
                     <a href={`https://vk.com/id${leader.userId}`} target="_blank" rel="noreferrer" className="text-[13px] font-semibold underline decoration-dotted" style={{ color: "#2787F5" }}>{leader.userName}</a>
                   ) : (
-                    <p className="text-[13px] font-semibold text-[#1C1A16]">{leader.userId === user.id ? leader.userName : dn(leader.userName)}</p>
+                    <p className="text-[13px] font-semibold text-[#1C1A16]">{dn(leader.userName, leader.userId)}</p>
                   )}
                 </div>
                 {leader.userId === user.id && (
@@ -280,7 +280,7 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                       {isAdmin ? (
                         <a href={`https://vk.com/id${bid.userId}`} target="_blank" rel="noreferrer" className="text-[13px] font-semibold truncate block underline decoration-dotted" style={{ color: "#2787F5" }}>{bid.userName}</a>
                       ) : (
-                        <p className="text-[13px] font-semibold text-[#1C1A16] truncate">{bid.userId === user.id ? bid.userName : dn(bid.userName)}</p>
+                        <p className="text-[13px] font-semibold text-[#1C1A16] truncate">{dn(bid.userName, bid.userId)}</p>
                       )}
                       <p className="text-[11px] text-[#B8A070]">{formatTime(bid.createdAt)}</p>
                     </div>

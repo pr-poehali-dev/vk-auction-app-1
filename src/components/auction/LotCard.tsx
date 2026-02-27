@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot } from "@/types/auction";
-import { formatTimer, formatPrice, getStatusLabel, useTimer, maskName } from "@/components/auction/lotUtils";
+import { formatTimer, formatPrice, getStatusLabel, useTimer, maskVKId } from "@/components/auction/lotUtils";
 
 export function TimerBadge({ endsAt }: { endsAt: Date }) {
   const ms = useTimer(endsAt);
@@ -18,7 +18,7 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
   const status = getStatusLabel(lot);
   const leaderName = lot.leaderName ?? lot.bids[0]?.userName;
   const leaderAvatar = lot.leaderAvatar ?? lot.bids[0]?.userAvatar;
-  const displayName = (name: string) => isAdmin ? name : maskName(name);
+  const displayName = (userId: string) => isAdmin ? userId : maskVKId(userId);
 
   return (
     <div
@@ -78,7 +78,7 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: "#C9A84C" }}>
                 {leaderAvatar ?? "?"}
               </div>
-              <span className="max-w-[80px] truncate">{displayName(leaderName)}</span>
+              <span className="max-w-[80px] truncate">{displayName(lot.leaderId ?? lot.bids[0]?.userId ?? "")}</span>
             </div>
           )}
         </div>
@@ -96,7 +96,7 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
                 {isAdmin ? (
                   <a href={`https://vk.com/id${b.userId}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-[12px] flex-1 truncate underline decoration-dotted" style={{ color: "#2787F5" }}>{b.userName}</a>
                 ) : (
-                  <span className="text-[12px] text-[#767676] flex-1 truncate">{maskName(b.userName)}</span>
+                  <span className="text-[12px] text-[#767676] flex-1 truncate">{maskVKId(b.userId)}</span>
                 )}
                 <span className="text-[12px] font-semibold shrink-0" style={{ color: i === 0 ? "#B8922A" : "#9A8E7A" }}>{formatPrice(b.amount)}</span>
               </div>
