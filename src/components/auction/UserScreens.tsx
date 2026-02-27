@@ -4,7 +4,7 @@ import { formatPrice, formatTime } from "@/components/auction/lotUtils";
 
 export function BidsScreen({ lots, user, onLot }: { lots: Lot[]; user: User; onLot: (id: string) => void }) {
   const myBids = lots
-    .flatMap((l) => l.bids.filter((b) => b.userId === user.id).map((b) => ({ bid: b, lot: l })))
+    .flatMap((l) => l.bids.filter((b) => b.userId === user.id || (user.numericId && b.userId === user.numericId)).map((b) => ({ bid: b, lot: l })))
     .sort((a, b) => b.bid.createdAt.getTime() - a.bid.createdAt.getTime());
 
   return (

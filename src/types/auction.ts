@@ -35,6 +35,7 @@ export interface Lot {
 
 export interface User {
   id: string;
+  numericId?: string;
   name: string;
   avatar: string;
   isAdmin: boolean;

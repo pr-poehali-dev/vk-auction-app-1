@@ -16,6 +16,7 @@ export function useAuction() {
 
   const user: User = {
     id: vkUser.screenName,
+    numericId: vkUser.id,
     name: vkUser.name,
     avatar: vkUser.avatar,
     isAdmin: vkUser.isAdmin,
