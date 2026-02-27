@@ -69,7 +69,7 @@ export function ProfileScreen({ user, lots }: { user: User; lots: Lot[] }) {
         <div className="bg-white border border-[#E8E8E8] rounded-2xl p-5 mt-3 mb-4 flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-[#2787F5] text-white flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden">
             {user.photoUrl
-              ? <img src={user.photoUrl} alt={user.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" crossOrigin="anonymous" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              ? <img src={user.photoUrl} alt={user.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
               : user.avatar}
           </div>
           <div>

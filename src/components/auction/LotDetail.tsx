@@ -237,9 +237,9 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                 <div>
                   <p className="text-[11px] text-[#B8A070]">Лидирует</p>
                   {isAdmin ? (
-                    <a href={`https://vk.com/id${leader.userId}`} target="_blank" rel="noreferrer" className="text-[13px] font-semibold underline decoration-dotted" style={{ color: "#2787F5" }}>{leader.userName}</a>
+                    <a href={vkProfileUrl(leader.userId)} target="_blank" rel="noreferrer" className="text-[13px] font-semibold underline decoration-dotted" style={{ color: "#2787F5" }}>{leader.userName}</a>
                   ) : (
-                    <p className="text-[13px] font-semibold text-[#1C1A16]">{dn(leader.userName, leader.userId)}</p>
+                    <p className="text-[13px] font-semibold text-[#1C1A16]">{leader.userId === user.id ? leader.userName : firstName(leader.userName)}</p>
                   )}
                 </div>
                 {leader.userId === user.id && (
