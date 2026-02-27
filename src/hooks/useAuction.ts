@@ -85,9 +85,11 @@ export function useAuction() {
   }
 
   async function handleSaveLot(data: Partial<Lot>, lotId?: string | null) {
+    // lotId: "new" = создать, число/строка = обновить, undefined = брать из editingLotId
     const targetId = lotId !== undefined ? lotId : editingLotId;
     let res: Record<string, unknown>;
-    if (targetId === "new") {
+    const isNew = !data.id || data.id === "new" || targetId === "new";
+    if (isNew) {
       res = await apiAdmin({
         action: "create",
         title: data.title,
@@ -101,10 +103,11 @@ export function useAuction() {
         antiSnipe: data.antiSnipe,
         antiSnipeMinutes: data.antiSnipeMinutes,
       }) as Record<string, unknown>;
-    } else if (targetId) {
+    } else {
+      const id = data.id || targetId;
       res = await apiAdmin({
         action: "update",
-        lotId: Number(targetId),
+        lotId: Number(id),
         title: data.title,
         description: data.description,
         image: data.image,
@@ -115,8 +118,6 @@ export function useAuction() {
         antiSnipe: data.antiSnipe,
         antiSnipeMinutes: data.antiSnipeMinutes,
       }) as Record<string, unknown>;
-    } else {
-      throw new Error("Не удалось определить ID лота. Попробуйте ещё раз.");
     }
     if (res?.error) throw new Error(String(res.error));
     await loadLots();

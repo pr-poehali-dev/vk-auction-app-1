@@ -300,6 +300,7 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
     try {
       await onSave({
         ...form,
+        id: lot?.id ?? "new",
         video: form.video || videoUrlRef.current || undefined,
         startPrice: Number(form.startPrice),
         step: Number(form.step),
