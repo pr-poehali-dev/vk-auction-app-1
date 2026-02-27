@@ -243,12 +243,20 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
     setVideoName(file.name);
 
     const UPLOAD_URL = "https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e";
-    const CHUNK_SIZE = 1 * 1024 * 1024; // 1 МБ (base64 ~1.3МБ)
+    const CHUNK_SIZE = 256 * 1024; // 256 КБ — надёжно работает в VK WebView
 
-    const api = async (body: object) => {
-      const r = await fetch(UPLOAD_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
+    const api = async (body: object, retries = 3): Promise<Record<string, unknown>> => {
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          const r = await fetch(UPLOAD_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        } catch (e) {
+          if (attempt === retries) throw e;
+          await new Promise(r => setTimeout(r, 1000 * attempt));
+        }
+      }
+      throw new Error("max retries");
     };
 
     try {
