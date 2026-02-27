@@ -73,7 +73,7 @@ function DesktopLotCard({ lot, onClick, isActive: isSelected }: { lot: Lot; onCl
           <p className="font-semibold text-[15px] text-[#1C1A16] leading-snug line-clamp-1 mb-1">{lot.title}</p>
           <p className="text-[13px] text-[#B8A070] line-clamp-2 leading-relaxed">{lot.description}</p>
         </div>
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mt-2 mb-1">
           <div>
             <p className="text-[11px] text-[#B8A070] mb-0.5">Текущая ставка</p>
             <p className="text-[18px] font-bold leading-none" style={{ color: "#B8922A" }}>{formatPrice(lot.currentPrice)}</p>
@@ -87,6 +87,19 @@ function DesktopLotCard({ lot, onClick, isActive: isSelected }: { lot: Lot; onCl
             </div>
           )}
         </div>
+        {lot.bids && lot.bids.length > 0 && (
+          <div className="space-y-1 pt-2" style={{ borderTop: "1px solid #EDE8DF" }}>
+            {lot.bids.slice(0, 3).map((b, i) => (
+              <div key={b.id} className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ background: i === 0 ? "#C9A84C" : "#D5CABC" }}>
+                  {b.userAvatar}
+                </div>
+                <span className="text-[12px] text-[#767676] flex-1 truncate">{b.userName}</span>
+                <span className="text-[12px] font-semibold shrink-0" style={{ color: i === 0 ? "#B8922A" : "#9A8E7A" }}>{formatPrice(b.amount)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
