@@ -21,8 +21,10 @@ export function formatTime(d: Date): string {
 
 export function maskVKId(userId: string): string {
   if (!userId || userId === "guest") return "***";
-  const slug = /^\d+$/.test(userId) ? `id${userId}` : userId;
-  return slug.slice(0, 3) + "*";
+  // Числовой ID — показываем первые 3 цифры + *
+  if (/^\d+$/.test(userId)) return userId.slice(0, 3) + "*";
+  // Текстовый slug — первые 3 символа + *
+  return userId.slice(0, 3) + "*";
 }
 
 export function getStatusLabel(lot: Lot) {

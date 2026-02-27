@@ -25,17 +25,25 @@ export function parseVKVideoEmbed(url: string): string | null {
 }
 
 // ─── Bid Modal ─────────────────────────────────────────────────────────────────
-export function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; onClose: () => void; onBid: (amount: number) => string }) {
+export function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; onClose: () => void; onBid: (amount: number) => Promise<string> }) {
   const [customAmount, setCustomAmount] = useState("");
   const [result, setResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [loading, setLoading] = useState(false);
   const minBid = lot.currentPrice + lot.step;
 
-  function handleBid(amount: number) {
-    const msg = onBid(amount);
-    if (msg === "ok") {
-      setResult({ type: "success", text: `Ставка ${formatPrice(amount)} принята!` });
-    } else {
-      setResult({ type: "error", text: msg });
+  async function handleBid(amount: number) {
+    setLoading(true);
+    try {
+      const msg = await onBid(amount);
+      if (msg === "ok") {
+        setResult({ type: "success", text: `Ставка ${formatPrice(amount)} принята!` });
+      } else {
+        setResult({ type: "error", text: msg });
+      }
+    } catch {
+      setResult({ type: "error", text: "Ошибка сети. Попробуйте ещё раз." });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -63,10 +71,11 @@ export function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; 
           <>
             <button
               onClick={() => handleBid(minBid)}
-              className="w-full text-white rounded-xl py-3.5 font-semibold text-[15px] mb-3 active:opacity-80 transition-opacity"
+              disabled={loading}
+              className="w-full text-white rounded-xl py-3.5 font-semibold text-[15px] mb-3 active:opacity-80 transition-opacity disabled:opacity-60"
               style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}
             >
-              + шаг — {formatPrice(minBid)}
+              {loading ? "Отправляем…" : `Поставить ${formatPrice(minBid)}`}
             </button>
             <div className="flex gap-2">
               <input
@@ -81,7 +90,7 @@ export function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; 
               />
               <button
                 onClick={() => handleBid(Number(customAmount))}
-                disabled={!customAmount || Number(customAmount) < minBid}
+                disabled={!customAmount || Number(customAmount) < minBid || loading}
                 className="rounded-xl px-4 font-semibold disabled:opacity-40 transition-opacity"
                 style={{ background: "#F5F0E8", color: "#B8922A" }}
               >
@@ -103,7 +112,7 @@ export function LotScreen({ lot, user, onBack, onBid }: {
   lot: Lot;
   user: User;
   onBack: () => void;
-  onBid: (lotId: string, amount: number) => string;
+  onBid: (lotId: string, amount: number) => Promise<string>;
 }) {
   const isAdmin = user.isAdmin;
   const dn = (name: string, userId: string) => (isAdmin || userId === user.id) ? name : maskVKId(userId);
