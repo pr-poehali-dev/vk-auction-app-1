@@ -18,7 +18,7 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
   const status = getStatusLabel(lot);
   const leaderName = lot.leaderName ?? lot.bids[0]?.userName;
   const leaderAvatar = lot.leaderAvatar ?? lot.bids[0]?.userAvatar;
-  const displayName = (userId: string) => isAdmin ? userId : maskVKId(userId);
+
 
   return (
     <div
@@ -78,7 +78,7 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: "#C9A84C" }}>
                 {leaderAvatar ?? "?"}
               </div>
-              <span className="max-w-[80px] truncate">{displayName(lot.leaderId ?? lot.bids[0]?.userId ?? "")}</span>
+              <span className="max-w-[80px] truncate">{isAdmin ? (lot.leaderId ?? "") : firstName(leaderName ?? "")}</span>
             </div>
           )}
         </div>

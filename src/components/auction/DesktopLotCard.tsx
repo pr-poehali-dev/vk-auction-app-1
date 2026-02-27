@@ -16,7 +16,7 @@ export function DesktopTimerBadge({ endsAt }: { endsAt: Date }) {
 export function DesktopLotCard({ lot, onClick, isActive: isSelected, isAdmin = false }: { lot: Lot; onClick: () => void; isActive: boolean; isAdmin?: boolean }) {
   const status = getStatusLabel(lot);
   const leaderName = lot.leaderName ?? lot.bids[0]?.userName;
-  const dn = (name: string, userId: string) => isAdmin ? name : maskVKId(userId);
+
 
   return (
     <div
@@ -77,7 +77,7 @@ export function DesktopLotCard({ lot, onClick, isActive: isSelected, isAdmin = f
               <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ background: "#C9A84C" }}>
                 {lot.leaderAvatar ?? lot.bids[0]?.userAvatar ?? "?"}
               </div>
-              <span className="max-w-[80px] truncate text-[11px]">{dn(leaderName ?? "", lot.leaderId ?? lot.bids[0]?.userId ?? "")}</span>
+              <span className="max-w-[80px] truncate text-[11px]">{isAdmin ? leaderName : firstName(leaderName ?? "")}</span>
             </div>
           )}
         </div>
