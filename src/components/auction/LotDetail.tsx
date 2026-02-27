@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot, User, Screen } from "@/types/auction";
-import { formatPrice, formatTime, getStatusLabel, useTimer } from "@/components/auction/lotUtils";
+import { formatPrice, formatTime, getStatusLabel, useTimer, maskName } from "@/components/auction/lotUtils";
 import { TimerBadge } from "@/components/auction/LotCard";
 
 // ─── VK Video Player ──────────────────────────────────────────────────────────
@@ -105,6 +105,8 @@ export function LotScreen({ lot, user, onBack, onBid }: {
   onBack: () => void;
   onBid: (lotId: string, amount: number) => string;
 }) {
+  const isAdmin = user.isAdmin;
+  const dn = (name: string) => isAdmin ? name : maskName(name);
   const [showBidModal, setShowBidModal] = useState(false);
   const [videoKey, setVideoKey] = useState(0);
   const [videoPlaying, setVideoPlaying] = useState(false);
@@ -227,7 +229,11 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                 </div>
                 <div>
                   <p className="text-[11px] text-[#B8A070]">Лидирует</p>
-                  <p className="text-[13px] font-semibold text-[#1C1A16]">{leader.userName}</p>
+                  {isAdmin ? (
+                    <a href={`https://vk.com/id${leader.userId}`} target="_blank" rel="noreferrer" className="text-[13px] font-semibold underline decoration-dotted" style={{ color: "#2787F5" }}>{leader.userName}</a>
+                  ) : (
+                    <p className="text-[13px] font-semibold text-[#1C1A16]">{leader.userId === user.id ? leader.userName : dn(leader.userName)}</p>
+                  )}
                 </div>
                 {leader.userId === user.id && (
                   <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "#C9A84C22", color: "#B8922A" }}>Это вы!</span>
@@ -271,7 +277,11 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                       {bid.userAvatar}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-[#1C1A16] truncate">{bid.userName}</p>
+                      {isAdmin ? (
+                        <a href={`https://vk.com/id${bid.userId}`} target="_blank" rel="noreferrer" className="text-[13px] font-semibold truncate block underline decoration-dotted" style={{ color: "#2787F5" }}>{bid.userName}</a>
+                      ) : (
+                        <p className="text-[13px] font-semibold text-[#1C1A16] truncate">{bid.userId === user.id ? bid.userName : dn(bid.userName)}</p>
+                      )}
                       <p className="text-[11px] text-[#B8A070]">{formatTime(bid.createdAt)}</p>
                     </div>
                     <p className="text-[14px] font-bold shrink-0" style={{ color: i === 0 ? "#B8922A" : "#1C1A16" }}>

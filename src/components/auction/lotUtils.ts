@@ -19,6 +19,14 @@ export function formatTime(d: Date): string {
   return d.toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+export function maskName(name: string): string {
+  if (!name) return "***";
+  const parts = name.trim().split(" ");
+  return parts
+    .map((p) => (p.length <= 3 ? p[0] + "**" : p.slice(0, 3) + "*".repeat(Math.min(p.length - 3, 3))))
+    .join(" ");
+}
+
 export function getStatusLabel(lot: Lot) {
   if (lot.status === "active") return { label: "Идёт", color: "bg-[#4CAF50] text-white" };
   if (lot.status === "finished") return { label: "Завершён", color: "bg-[#E8E8E8] text-[#767676]" };

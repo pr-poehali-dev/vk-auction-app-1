@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot, User, Screen } from "@/types/auction";
-import { formatPrice, formatTimer, formatTime, getStatusLabel, useTimer } from "@/components/auction/lotUtils";
+import { formatPrice, formatTimer, formatTime, getStatusLabel, useTimer, maskName } from "@/components/auction/lotUtils";
 import { parseVKVideoEmbed } from "@/components/auction/LotDetail";
 import { BidsScreen, ProfileScreen } from "@/components/auction/UserScreens";
 import { AdminScreen, AdminLotForm } from "@/components/auction/AdminScreens";
@@ -18,9 +18,10 @@ function DesktopTimerBadge({ endsAt }: { endsAt: Date }) {
   );
 }
 
-function DesktopLotCard({ lot, onClick, isActive: isSelected }: { lot: Lot; onClick: () => void; isActive: boolean }) {
+function DesktopLotCard({ lot, onClick, isActive: isSelected, isAdmin = false }: { lot: Lot; onClick: () => void; isActive: boolean; isAdmin?: boolean }) {
   const status = getStatusLabel(lot);
   const leaderName = lot.leaderName ?? lot.bids[0]?.userName;
+  const dn = (name: string) => isAdmin ? name : maskName(name);
 
   return (
     <div
@@ -83,18 +84,26 @@ function DesktopLotCard({ lot, onClick, isActive: isSelected }: { lot: Lot; onCl
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: "#C9A84C" }}>
                 {lot.leaderAvatar ?? lot.bids[0]?.userAvatar ?? "?"}
               </div>
-              <span className="max-w-[100px] truncate">{leaderName}</span>
+              <span className="max-w-[100px] truncate">{dn(leaderName ?? "")}</span>
             </div>
           )}
         </div>
         {lot.bids && lot.bids.length > 0 && (
           <div className="space-y-1 pt-2" style={{ borderTop: "1px solid #EDE8DF" }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] text-[#B8A070] uppercase tracking-wide">Последние ставки</span>
+              {lot.bidCount != null && <span className="text-[10px] text-[#B8A070]">{lot.bidCount} {lot.bidCount === 1 ? "ставка" : lot.bidCount < 5 ? "ставки" : "ставок"}</span>}
+            </div>
             {lot.bids.slice(0, 3).map((b, i) => (
               <div key={b.id} className="flex items-center gap-1.5">
                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ background: i === 0 ? "#C9A84C" : "#D5CABC" }}>
                   {b.userAvatar}
                 </div>
-                <span className="text-[12px] text-[#767676] flex-1 truncate">{b.userName}</span>
+                {isAdmin ? (
+                  <a href={`https://vk.com/id${b.userId}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-[12px] flex-1 truncate underline decoration-dotted" style={{ color: "#2787F5" }}>{b.userName}</a>
+                ) : (
+                  <span className="text-[12px] text-[#767676] flex-1 truncate">{dn(b.userName)}</span>
+                )}
                 <span className="text-[12px] font-semibold shrink-0" style={{ color: i === 0 ? "#B8922A" : "#9A8E7A" }}>{formatPrice(b.amount)}</span>
               </div>
             ))}
@@ -123,6 +132,8 @@ function DesktopLotDetail({
   const minBid = lot.currentPrice + lot.step;
   const status = getStatusLabel(lot);
   const leader = lot.bids[0];
+  const isAdmin = user.isAdmin;
+  const dn = (name: string, userId: string) => (isAdmin || userId === user.id) ? name : maskName(name);
   const vkEmbedUrl = lot.video ? parseVKVideoEmbed(lot.video) : null;
   const isS3Video = Boolean(lot.video?.startsWith("https://cdn.poehali.dev"));
   const hasVideo = Boolean(lot.video && (vkEmbedUrl || isS3Video));
@@ -190,7 +201,11 @@ function DesktopLotDetail({
             </div>
             <div>
               <p className="text-[11px] text-[#B8A070]">Лидирует</p>
-              <p className="text-[13px] font-semibold text-[#1C1A16]">{leader.userName}</p>
+              {isAdmin ? (
+                <a href={`https://vk.com/id${leader.userId}`} target="_blank" rel="noreferrer" className="text-[13px] font-semibold underline decoration-dotted" style={{ color: "#2787F5" }}>{leader.userName}</a>
+              ) : (
+                <p className="text-[13px] font-semibold text-[#1C1A16]">{dn(leader.userName, leader.userId)}</p>
+              )}
             </div>
             {leader.userId === user.id && (
               <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "#C9A84C22", color: "#B8922A" }}>Это вы!</span>
@@ -279,7 +294,11 @@ function DesktopLotDetail({
                 <div className="w-6 h-6 rounded-full text-white flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: i === 0 ? "#C9A84C" : "#D5CABC" }}>
                   {b.userAvatar}
                 </div>
-                <span className="text-[13px] text-[#1C1A16] flex-1 truncate">{b.userName}</span>
+                {isAdmin ? (
+                  <a href={`https://vk.com/id${b.userId}`} target="_blank" rel="noreferrer" className="text-[13px] flex-1 truncate underline decoration-dotted" style={{ color: "#2787F5" }}>{b.userName}</a>
+                ) : (
+                  <span className="text-[13px] text-[#1C1A16] flex-1 truncate">{dn(b.userName, b.userId)}</span>
+                )}
                 <span className="text-[13px] font-semibold" style={{ color: i === 0 ? "#B8922A" : "#767676" }}>{formatPrice(b.amount)}</span>
                 <span className="text-[11px] text-[#B8A070] w-16 text-right shrink-0">{formatTime(b.createdAt)}</span>
               </div>
@@ -338,6 +357,7 @@ function DesktopCatalog({ lots, user, onBid }: { lots: Lot[]; user: User; onBid:
                 lot={l}
                 onClick={() => setSelectedId(l.id)}
                 isActive={l.id === (selectedId ?? selectedLot?.id)}
+                isAdmin={user.isAdmin}
               />
             ))
           )}

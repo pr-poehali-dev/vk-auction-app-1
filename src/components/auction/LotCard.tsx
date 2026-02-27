@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot } from "@/types/auction";
-import { formatTimer, formatPrice, getStatusLabel, useTimer } from "@/components/auction/lotUtils";
+import { formatTimer, formatPrice, getStatusLabel, useTimer, maskName } from "@/components/auction/lotUtils";
 
 export function TimerBadge({ endsAt }: { endsAt: Date }) {
   const ms = useTimer(endsAt);
@@ -14,10 +14,11 @@ export function TimerBadge({ endsAt }: { endsAt: Date }) {
   );
 }
 
-export function LotCard({ lot, onClick }: { lot: Lot; onClick: () => void }) {
+export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: () => void; isAdmin?: boolean }) {
   const status = getStatusLabel(lot);
   const leaderName = lot.leaderName ?? lot.bids[0]?.userName;
   const leaderAvatar = lot.leaderAvatar ?? lot.bids[0]?.userAvatar;
+  const displayName = (name: string) => isAdmin ? name : maskName(name);
 
   return (
     <div
@@ -77,18 +78,26 @@ export function LotCard({ lot, onClick }: { lot: Lot; onClick: () => void }) {
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: "#C9A84C" }}>
                 {leaderAvatar ?? "?"}
               </div>
-              <span className="max-w-[80px] truncate">{leaderName}</span>
+              <span className="max-w-[80px] truncate">{displayName(leaderName)}</span>
             </div>
           )}
         </div>
         {lot.bids && lot.bids.length > 0 && (
           <div className="space-y-1 pt-2" style={{ borderTop: "1px solid #EDE8DF" }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] text-[#B8A070] uppercase tracking-wide">Последние ставки</span>
+              {lot.bidCount != null && <span className="text-[10px] text-[#B8A070]">{lot.bidCount} {lot.bidCount === 1 ? "ставка" : lot.bidCount < 5 ? "ставки" : "ставок"}</span>}
+            </div>
             {lot.bids.slice(0, 3).map((b, i) => (
               <div key={b.id} className="flex items-center gap-1.5">
                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ background: i === 0 ? "#C9A84C" : "#D5CABC" }}>
                   {b.userAvatar}
                 </div>
-                <span className="text-[12px] text-[#767676] flex-1 truncate">{b.userName}</span>
+                {isAdmin ? (
+                  <a href={`https://vk.com/id${b.userId}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-[12px] flex-1 truncate underline decoration-dotted" style={{ color: "#2787F5" }}>{b.userName}</a>
+                ) : (
+                  <span className="text-[12px] text-[#767676] flex-1 truncate">{maskName(b.userName)}</span>
+                )}
                 <span className="text-[12px] font-semibold shrink-0" style={{ color: i === 0 ? "#B8922A" : "#9A8E7A" }}>{formatPrice(b.amount)}</span>
               </div>
             ))}
@@ -99,7 +108,7 @@ export function LotCard({ lot, onClick }: { lot: Lot; onClick: () => void }) {
   );
 }
 
-export function CatalogScreen({ lots, onLot }: { lots: Lot[]; onLot: (id: string) => void }) {
+export function CatalogScreen({ lots, onLot, isAdmin = false }: { lots: Lot[]; onLot: (id: string) => void; isAdmin?: boolean }) {
   const [tab, setTab] = useState<"active" | "finished">("active");
   const filtered = lots.filter((l) =>
     tab === "active" ? l.status === "active" || l.status === "upcoming" : l.status === "finished" || l.status === "cancelled"
@@ -133,7 +142,7 @@ export function CatalogScreen({ lots, onLot }: { lots: Lot[]; onLot: (id: string
         ) : (
           <div className="grid grid-cols-1 gap-3 mt-3">
             {filtered.map((l) => (
-              <LotCard key={l.id} lot={l} onClick={() => onLot(l.id)} />
+              <LotCard key={l.id} lot={l} onClick={() => onLot(l.id)} isAdmin={isAdmin} />
             ))}
           </div>
         )}

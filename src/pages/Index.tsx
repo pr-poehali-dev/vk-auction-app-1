@@ -63,7 +63,7 @@ export function MobileShell() {
             </div>
           ) : (
             <>
-              {screen === "catalog" && <CatalogScreen lots={lots} onLot={goLot} />}
+              {screen === "catalog" && <CatalogScreen lots={lots} onLot={goLot} isAdmin={user.isAdmin} />}
               {screen === "lot" && activeLot && (
                 <LotScreen
                   lot={activeLot}
