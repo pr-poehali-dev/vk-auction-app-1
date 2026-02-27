@@ -116,10 +116,10 @@ export function DesktopLayout({
               <div className="h-full overflow-y-auto bg-[#F7F4EF]">
                 <AdminScreen
                   lots={lots}
-                  onEdit={(id) => { setEditingLotId(id); setScreen("admin-lot"); }}
-                  onNew={() => { setEditingLotId("new"); setScreen("admin-lot"); }}
+                  onEditLot={(id) => { setEditingLotId(id); setScreen("admin-lot"); }}
+                  onNewLot={() => { setEditingLotId("new"); setScreen("admin-lot"); }}
                   onUpdateStatus={onUpdateStatus}
-                  onStop={onStopLot}
+                  onStopLot={onStopLot}
                 />
               </div>
             )}
