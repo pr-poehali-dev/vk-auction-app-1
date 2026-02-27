@@ -69,14 +69,16 @@ export function ProfileScreen({ user, lots }: { user: User; lots: Lot[] }) {
         <div className="bg-white border border-[#E8E8E8] rounded-2xl p-5 mt-3 mb-4 flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-[#2787F5] text-white flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden">
             {user.photoUrl
-              ? <img src={user.photoUrl} alt={user.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              ? <img src={user.photoUrl} alt={user.name} className="w-full h-full object-cover" onError={(e) => { const t = e.target as HTMLImageElement; t.style.display = "none"; t.parentElement!.textContent = user.avatar; }} />
               : user.avatar}
           </div>
+
           <div>
             <p className="font-bold text-[18px] text-[#1C1C1E]">{user.name}</p>
             {user.isAdmin && (
               <span className="text-xs bg-[#E3F2FD] text-[#2787F5] font-semibold px-2 py-0.5 rounded-full">Администратор</span>
             )}
+            <p className="text-[10px] text-[#CCC] mt-0.5 break-all">{user.photoUrl ? "photo: " + user.photoUrl.slice(0, 40) + "…" : "photo: нет"}</p>
           </div>
         </div>
 

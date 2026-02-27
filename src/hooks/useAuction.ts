@@ -85,8 +85,9 @@ export function useAuction() {
   }
 
   async function handleSaveLot(data: Partial<Lot>) {
+    let res: Record<string, unknown>;
     if (editingLotId === "new") {
-      await apiAdmin({
+      res = await apiAdmin({
         action: "create",
         title: data.title,
         description: data.description,
@@ -98,9 +99,9 @@ export function useAuction() {
         endsAt: data.endsAt?.toISOString(),
         antiSnipe: data.antiSnipe,
         antiSnipeMinutes: data.antiSnipeMinutes,
-      });
+      }) as Record<string, unknown>;
     } else if (editingLotId) {
-      await apiAdmin({
+      res = await apiAdmin({
         action: "update",
         lotId: Number(editingLotId),
         title: data.title,
@@ -112,8 +113,11 @@ export function useAuction() {
         endsAt: data.endsAt?.toISOString(),
         antiSnipe: data.antiSnipe,
         antiSnipeMinutes: data.antiSnipeMinutes,
-      });
+      }) as Record<string, unknown>;
+    } else {
+      return;
     }
+    if (res?.error) throw new Error(String(res.error));
     await loadLots();
   }
 

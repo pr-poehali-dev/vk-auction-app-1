@@ -56,7 +56,7 @@ export function useVKUser(): VKUser {
       try {
         bridge.send("VKWebAppInit", { app_id: 54464410 });
 
-        const userInfo = await withTimeout(bridge.send("VKWebAppGetUserInfo"), 3000);
+        const userInfo = await withTimeout(bridge.send("VKWebAppGetUserInfo", {}), 3000);
         const name = [userInfo.first_name, userInfo.last_name].filter(Boolean).join(" ");
         const initials = [userInfo.first_name?.[0], userInfo.last_name?.[0]].filter(Boolean).join("");
 

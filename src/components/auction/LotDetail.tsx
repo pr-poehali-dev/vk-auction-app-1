@@ -278,7 +278,7 @@ export function LotScreen({ lot, user, onBack, onBid }: {
               <p className="text-sm text-[#767676] text-center py-4">Ставок ещё нет — будьте первым!</p>
             ) : (
               <div className="space-y-2">
-                {lot.bids.slice(0, 10).map((bid, i) => (
+                {lot.bids.slice(0, 3).map((bid, i) => (
                   <div key={bid.id} className="flex items-center gap-3 p-3 rounded-xl" style={i === 0 ? { background: "#FDF9F0", border: "1px solid #EDE0C8" } : { background: "white", border: "1px solid #F0EBE0" }}>
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white" style={i === 0 ? { background: "linear-gradient(135deg, #C9A84C, #E8C96B)" } : { background: "#EDE0C8", color: "#B8A070" }}>
                       {bid.userAvatar}

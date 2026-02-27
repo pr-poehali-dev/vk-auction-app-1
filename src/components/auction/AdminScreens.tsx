@@ -256,17 +256,26 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
     setVideoUploading(false);
   }
 
+  const [saving, setSaving] = useState(false);
+
   async function handleSave() {
     if (!form.title || !form.endsAt) return;
-    await onSave({
-      ...form,
-      video: videoUrlRef.current,
-      startPrice: Number(form.startPrice),
-      step: Number(form.step),
-      antiSnipeMinutes: Number(form.antiSnipeMinutes),
-      endsAt: new Date(form.endsAt + ":00+03:00"),
-    });
-    (onBack ?? onCancel)?.();
+    setSaving(true);
+    try {
+      await onSave({
+        ...form,
+        video: videoUrlRef.current,
+        startPrice: Number(form.startPrice),
+        step: Number(form.step),
+        antiSnipeMinutes: Number(form.antiSnipeMinutes),
+        endsAt: new Date(form.endsAt + ":00+03:00"),
+      });
+      (onBack ?? onCancel)?.();
+    } catch (err) {
+      alert("Ошибка сохранения: " + String(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -406,10 +415,10 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
 
         <button
           onClick={handleSave}
-          disabled={!form.title || !form.endsAt}
+          disabled={!form.title || !form.endsAt || saving || videoUploading}
           className="w-full bg-[#2787F5] text-white rounded-xl py-3.5 font-bold text-[16px] disabled:opacity-40 transition-opacity"
         >
-          {isNew ? "Создать лот" : "Сохранить изменения"}
+          {saving ? "Сохраняем…" : isNew ? "Создать лот" : "Сохранить изменения"}
         </button>
       </div>
     </div>
