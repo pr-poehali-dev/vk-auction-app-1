@@ -7,7 +7,7 @@ export function TimerBadge({ endsAt }: { endsAt: Date }) {
   const ms = useTimer(endsAt);
   const isUrgent = ms > 0 && ms < 5 * 60 * 1000;
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full transition-colors ${isUrgent ? "bg-red-500/15 text-red-500" : "bg-black/25 text-white"}`}>
+    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full transition-colors ${isUrgent ? "bg-red-600 text-white animate-pulse" : "bg-black/25 text-white"}`}>
       <Icon name="Clock" size={10} />
       {formatTimer(ms)}
     </span>
