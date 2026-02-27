@@ -20,7 +20,7 @@ export function formatTime(d: Date): string {
 }
 
 export function maskVKId(userId: string): string {
-  if (!userId) return "***";
+  if (!userId || userId === "guest") return "***";
   const slug = /^\d+$/.test(userId) ? `id${userId}` : userId;
   return slug.slice(0, 3) + "*";
 }

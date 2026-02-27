@@ -3,6 +3,7 @@ import bridge from "@vkontakte/vk-bridge";
 
 export interface VKUser {
   id: string;
+  screenName: string;
   name: string;
   avatar: string;
   photoUrl?: string;
@@ -12,6 +13,7 @@ export interface VKUser {
 
 const FALLBACK_USER: VKUser = {
   id: "guest",
+  screenName: "guest",
   name: "Гость",
   avatar: "Г",
   isAdmin: false,
@@ -20,6 +22,7 @@ const FALLBACK_USER: VKUser = {
 
 const DEV_USER: VKUser = {
   id: "dev",
+  screenName: "dev",
   name: "Разработчик",
   avatar: "Р",
   isAdmin: true,
@@ -65,8 +68,11 @@ export function useVKUser(): VKUser {
           isAdmin = role === "admin" || role === "editor" || viewerType === "app_widget";
         } catch (_e) { isAdmin = false; }
 
+        const screenName = (userInfo as Record<string, unknown>).screen_name as string | undefined;
+
         setUser({
           id: String(userInfo.id),
+          screenName: screenName || `id${userInfo.id}`,
           name,
           avatar: initials || "В",
           photoUrl: userInfo.photo_200,

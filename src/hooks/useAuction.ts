@@ -15,7 +15,7 @@ export function useAuction() {
   const vkUserId = vkUser.id;
 
   const user: User = {
-    id: vkUserId,
+    id: vkUser.screenName,
     name: vkUser.name,
     avatar: vkUser.avatar,
     isAdmin: vkUser.isAdmin,
@@ -38,7 +38,7 @@ export function useAuction() {
         const normalized = data.map(normalizeLot);
         setLots(normalized);
         normalized.forEach((lot) => {
-          if (lot.status === "finished" && lot.winnerId === vkUserId && vkUserId !== "guest") {
+          if (lot.status === "finished" && lot.winnerId === vkUser.screenName && vkUser.screenName !== "guest") {
             notifyWinner(lot);
           }
         });
