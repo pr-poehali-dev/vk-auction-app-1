@@ -22,41 +22,63 @@ def get_conn():
     return psycopg2.connect(os.environ["DATABASE_URL"])
 
 
+def err(msg: str, status: int = 400):
+    print(f"[auction-admin] ERROR: {msg}")
+    return {"statusCode": status, "headers": CORS, "body": json.dumps({"error": msg})}
+
+
 def handler(event: dict, context) -> dict:
     if event.get("httpMethod") == "OPTIONS":
         return {"statusCode": 200, "headers": CORS, "body": ""}
 
-    body = json.loads(event.get("body") or "{}")
-    action = body.get("action")
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except Exception as e:
+        return err(f"invalid JSON: {e}")
 
-    conn = get_conn()
+    action = body.get("action")
+    print(f"[auction-admin] action={action} body_keys={list(body.keys())}")
+
+    try:
+        conn = get_conn()
+    except Exception as e:
+        return err(f"DB connect failed: {e}", 500)
+
     cur = conn.cursor()
 
     if action == "create":
-        title = body.get("title", "").replace("'", "''")
-        description = body.get("description", "").replace("'", "''")
-        image = body.get("image", "").replace("'", "''")
-        video = body.get("video", "").replace("'", "''")
-        video_duration = body.get("videoDuration")
-        start_price = int(body.get("startPrice", 1000))
-        step = int(body.get("step", 100))
-        ends_at = body.get("endsAt", "")
-        anti_snipe = "true" if body.get("antiSnipe", True) else "false"
-        anti_snipe_min = int(body.get("antiSnipeMinutes", 2))
-        vd_sql = f", {int(video_duration)}" if video_duration else ", NULL"
+        try:
+            title = body.get("title", "").replace("'", "''")
+            description = body.get("description", "").replace("'", "''")
+            image = (body.get("image") or "").replace("'", "''")
+            video = (body.get("video") or "").replace("'", "''")
+            video_duration = body.get("videoDuration")
+            start_price = int(body.get("startPrice", 1000))
+            step = int(body.get("step", 100))
+            ends_at = body.get("endsAt", "")
+            anti_snipe = "true" if body.get("antiSnipe", True) else "false"
+            anti_snipe_min = int(body.get("antiSnipeMinutes", 2))
+            vd_sql = f", {int(video_duration)}" if video_duration else ", NULL"
 
-        cur.execute(f"""
-            INSERT INTO {SCHEMA}.lots
-              (title, description, image, video, start_price, current_price, step, ends_at, anti_snipe, anti_snipe_minutes, video_duration)
-            VALUES
-              ('{title}', '{description}', '{image}', '{video}', {start_price}, {start_price}, {step},
-               '{ends_at}', {anti_snipe}, {anti_snipe_min}{vd_sql})
-            RETURNING id
-        """)
-        new_id = cur.fetchone()[0]
-        conn.commit()
-        conn.close()
-        return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True, "id": new_id})}
+            print(f"[auction-admin] create: title={title!r} ends_at={ends_at!r} start_price={start_price}")
+
+            cur.execute(f"""
+                INSERT INTO {SCHEMA}.lots
+                  (title, description, image, video, start_price, current_price, step, ends_at, anti_snipe, anti_snipe_minutes, video_duration)
+                VALUES
+                  ('{title}', '{description}', '{image}', '{video}', {start_price}, {start_price}, {step},
+                   '{ends_at}', {anti_snipe}, {anti_snipe_min}{vd_sql})
+                RETURNING id
+            """)
+            new_id = cur.fetchone()[0]
+            conn.commit()
+            conn.close()
+            print(f"[auction-admin] created lot id={new_id}")
+            return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True, "id": new_id})}
+        except Exception as e:
+            conn.rollback()
+            conn.close()
+            return err(f"create failed: {e}", 500)
 
     elif action == "update":
         lot_id = int(body.get("lotId", 0))
