@@ -92,6 +92,17 @@ def handler(event: dict, context) -> dict:
         cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
         return ok({"url": cdn_url})
 
+    elif action == "upload_image":
+        filename = body.get("filename", "photo.jpg")
+        content_type = body.get("contentType", "image/jpeg")
+        ext = filename.rsplit(".", 1)[-1] if "." in filename else "jpg"
+        data = base64.b64decode(body["data"])
+        key = f"images/{uuid.uuid4()}.{ext}"
+        s3 = get_s3()
+        s3.put_object(Bucket=BUCKET, Key=key, Body=data, ContentType=content_type)
+        cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+        return ok({"url": cdn_url})
+
     elif action == "abort":
         upload_id = body.get("uploadId", "")
         for p in _glob.glob(f"{TMP}/{upload_id}_*.part"):

@@ -191,13 +191,48 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
   });
   const [videoUploading, setVideoUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [imageUploading, setImageUploading] = useState(false);
   const isS3Video = lot?.video?.startsWith("https://cdn.poehali.dev");
   const [videoName, setVideoName] = useState(isS3Video ? "Видео загружено (CDN)" : lot?.video ? "ВК-видео" : "");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const videoUrlRef = useRef<string>(lot?.video || "");
 
   function set(key: string, val: unknown) {
     setForm((f) => ({ ...f, [key]: val }));
+  }
+
+  async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageUploading(true);
+    const UPLOAD_URL = "https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e";
+    try {
+      const toBase64 = (blob: Blob): Promise<string> =>
+        new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res((r.result as string).split(",")[1]);
+          r.onerror = rej;
+          r.readAsDataURL(blob);
+        });
+      const data = await toBase64(file);
+      const resp = await fetch(UPLOAD_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "upload_image", filename: file.name, contentType: file.type, data }),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const { url } = await resp.json();
+      if (url) {
+        set("image", url);
+      } else {
+        alert("Ошибка загрузки фото");
+      }
+    } catch (err) {
+      alert("Ошибка загрузки фото: " + String(err));
+    }
+    setImageUploading(false);
+    if (imageInputRef.current) imageInputRef.current.value = "";
   }
 
   async function handleVideoFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -264,7 +299,7 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
     try {
       await onSave({
         ...form,
-        video: videoUrlRef.current,
+        video: form.video || videoUrlRef.current || undefined,
         startPrice: Number(form.startPrice),
         step: Number(form.step),
         antiSnipeMinutes: Number(form.antiSnipeMinutes),
@@ -287,20 +322,39 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
         <h1 className="text-[20px] font-bold text-[#1C1C1E]">{isNew ? "Новый лот" : "Редактировать лот"}</h1>
       </div>
       <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4 mt-3">
-        {[
-          { label: "Название *", key: "title", placeholder: "Например: Картина маслом 60×80" },
-          { label: "Ссылка на фото", key: "image", placeholder: "https://example.com/photo.jpg" },
-        ].map((f) => (
-          <div key={f.key}>
-            <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">{f.label}</label>
+        <div>
+          <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">Название *</label>
+          <input
+            value={form.title}
+            onChange={(e) => set("title", e.target.value)}
+            placeholder="Например: Картина маслом 60×80"
+            className="w-full border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#2787F5] bg-white"
+          />
+        </div>
+
+        <div>
+          <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">Фото</label>
+          <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageFile} />
+          <div className="flex gap-2">
             <input
-              value={(form as Record<string, unknown>)[f.key] as string}
-              onChange={(e) => set(f.key, e.target.value)}
-              placeholder={f.placeholder}
-              className="w-full border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#2787F5] bg-white"
+              value={form.image}
+              onChange={(e) => set("image", e.target.value)}
+              placeholder="https://example.com/photo.jpg"
+              className="flex-1 border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#2787F5] bg-white min-w-0"
             />
+            <button
+              onClick={() => imageInputRef.current?.click()}
+              disabled={imageUploading}
+              title="Загрузить фото с устройства"
+              className="shrink-0 w-11 h-11 rounded-xl border border-[#E0E0E0] bg-white flex items-center justify-center text-[#2787F5] active:opacity-70 disabled:opacity-40"
+            >
+              <Icon name={imageUploading ? "Loader" : "ImagePlus"} size={18} className={imageUploading ? "animate-spin" : ""} />
+            </button>
           </div>
-        ))}
+          {form.image && form.image.startsWith("http") && (
+            <img src={form.image} alt="preview" className="mt-2 w-full h-32 object-cover rounded-xl border border-[#E0E0E0]" />
+          )}
+        </div>
 
         <div>
           <label className="text-[12px] font-semibold text-[#767676] mb-1.5 block uppercase tracking-wide">Видео</label>
