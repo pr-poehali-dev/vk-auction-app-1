@@ -20,7 +20,7 @@ export function DesktopLayout({
   user: User;
   loading: boolean;
   onBid: (lotId: string, amount: number) => Promise<string>;
-  onSaveLot: (data: Partial<Lot>) => Promise<void>;
+  onSaveLot: (data: Partial<Lot>, lotId?: string | null) => Promise<void>;
   onUpdateStatus: (id: string, status: Lot["paymentStatus"]) => Promise<void>;
   onStopLot: (id: string) => Promise<void>;
 }) {
@@ -127,7 +127,7 @@ export function DesktopLayout({
               <div className="h-full overflow-y-auto bg-[#F7F4EF]">
                 <AdminLotForm
                   lot={editingLot}
-                  onSave={async (data) => { await onSaveLot(data); setScreen("admin"); }}
+                  onSave={async (data) => { await onSaveLot(data, editingLotId); setScreen("admin"); }}
                   onCancel={() => setScreen("admin")}
                 />
               </div>

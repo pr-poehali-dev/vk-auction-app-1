@@ -9,8 +9,18 @@ const API = {
 type ApiResponse = Record<string, unknown>;
 
 async function apiFetch(url: string, opts?: RequestInit): Promise<ApiResponse | ApiResponse[]> {
-  const r = await fetch(url, { headers: { "Content-Type": "application/json" }, ...opts });
-  return r.json() as Promise<ApiResponse | ApiResponse[]>;
+  try {
+    const r = await fetch(url, { headers: { "Content-Type": "application/json" }, ...opts });
+    if (!r.ok) {
+      const text = await r.text();
+      console.error(`[api] HTTP ${r.status} for ${url}:`, text);
+      try { return JSON.parse(text) as ApiResponse; } catch { return { error: `HTTP ${r.status}: ${text}` }; }
+    }
+    return r.json() as Promise<ApiResponse | ApiResponse[]>;
+  } catch (e) {
+    console.error(`Fetch error: ${e} for ${url}`);
+    throw e;
+  }
 }
 
 export function apiGetLots(): Promise<ApiResponse | ApiResponse[]> {
