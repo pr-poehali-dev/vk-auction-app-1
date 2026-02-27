@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot, User } from "@/types/auction";
 import { BidsScreen, ProfileScreen } from "@/components/auction/UserScreens";
@@ -26,6 +26,7 @@ export function DesktopLayout({
 }) {
   const [screen, setScreen] = useState<DesktopScreen>("catalog");
   const [editingLotId, setEditingLotId] = useState<string | null | "new">(null);
+  const editingLotIdRef = useRef<string | null | "new">(null);
 
   const navItems = [
     { id: "catalog", icon: "Gavel", label: "Аукцион" },
@@ -116,8 +117,8 @@ export function DesktopLayout({
               <div className="h-full overflow-y-auto bg-[#F7F4EF]">
                 <AdminScreen
                   lots={lots}
-                  onEditLot={(id) => { setEditingLotId(id); setScreen("admin-lot"); }}
-                  onNewLot={() => { setEditingLotId("new"); setScreen("admin-lot"); }}
+                  onEditLot={(id) => { editingLotIdRef.current = id; setEditingLotId(id); setScreen("admin-lot"); }}
+                  onNewLot={() => { editingLotIdRef.current = "new"; setEditingLotId("new"); setScreen("admin-lot"); }}
                   onUpdateStatus={onUpdateStatus}
                   onStopLot={onStopLot}
                 />
@@ -127,7 +128,7 @@ export function DesktopLayout({
               <div className="h-full overflow-y-auto bg-[#F7F4EF]">
                 <AdminLotForm
                   lot={editingLot}
-                  onSave={async (data) => { await onSaveLot(data, editingLotId); setScreen("admin"); }}
+                  onSave={async (data) => { await onSaveLot(data, editingLotIdRef.current); setScreen("admin"); }}
                   onCancel={() => setScreen("admin")}
                 />
               </div>
