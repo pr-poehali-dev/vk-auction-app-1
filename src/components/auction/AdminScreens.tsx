@@ -171,10 +171,11 @@ export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopL
 }
 
 // ─── Screen: Admin Lot Form ────────────────────────────────────────────────────
-export function AdminLotForm({ lot, onBack, onSave }: {
+export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
   lot: Partial<Lot> | null;
-  onBack: () => void;
-  onSave: (data: Partial<Lot>) => void;
+  onBack?: () => void;
+  onCancel?: () => void;
+  onSave: (data: Partial<Lot>) => void | Promise<void>;
 }) {
   const isNew = !lot?.id;
   const [form, setForm] = useState({
@@ -255,9 +256,9 @@ export function AdminLotForm({ lot, onBack, onSave }: {
     setVideoUploading(false);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!form.title || !form.endsAt) return;
-    onSave({
+    await onSave({
       ...form,
       video: videoUrlRef.current,
       startPrice: Number(form.startPrice),
@@ -265,13 +266,13 @@ export function AdminLotForm({ lot, onBack, onSave }: {
       antiSnipeMinutes: Number(form.antiSnipeMinutes),
       endsAt: new Date(form.endsAt + ":00+03:00"),
     });
-    onBack();
+    (onBack ?? onCancel)?.();
   }
 
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 pt-4 pb-3 bg-white border-b border-[#E8E8E8] flex items-center gap-3">
-        <button onClick={onBack} className="w-9 h-9 border border-[#E0E0E0] rounded-full flex items-center justify-center shrink-0">
+        <button onClick={onBack ?? onCancel} className="w-9 h-9 border border-[#E0E0E0] rounded-full flex items-center justify-center shrink-0">
           <Icon name="ChevronLeft" size={20} />
         </button>
         <h1 className="text-[20px] font-bold text-[#1C1C1E]">{isNew ? "Новый лот" : "Редактировать лот"}</h1>

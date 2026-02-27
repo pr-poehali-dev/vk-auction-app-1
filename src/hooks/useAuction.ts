@@ -19,6 +19,7 @@ export function useAuction() {
     numericId: vkUser.id,
     name: vkUser.name,
     avatar: vkUser.avatar,
+    photoUrl: vkUser.photoUrl,
     isAdmin: vkUser.isAdmin,
   };
 

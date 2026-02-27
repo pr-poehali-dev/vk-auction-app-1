@@ -4,7 +4,7 @@ import { formatPrice, formatTime } from "@/components/auction/lotUtils";
 
 export function BidsScreen({ lots, user, onLot }: { lots: Lot[]; user: User; onLot: (id: string) => void }) {
   const myBids = lots
-    .flatMap((l) => l.bids.filter((b) => b.userId === user.id || (user.numericId && b.userId === user.numericId)).map((b) => ({ bid: b, lot: l })))
+    .flatMap((l) => l.bids.filter((b) => b.userId === user.id || (user.numericId != null && (b.userId === user.numericId || b.userId === `id${user.numericId}`))).map((b) => ({ bid: b, lot: l })))
     .sort((a, b) => b.bid.createdAt.getTime() - a.bid.createdAt.getTime());
 
   return (
@@ -54,7 +54,9 @@ export function BidsScreen({ lots, user, onLot }: { lots: Lot[]; user: User; onL
 }
 
 export function ProfileScreen({ user, lots }: { user: User; lots: Lot[] }) {
-  const isMe = (id: string) => id === user.id || (user.numericId && id === user.numericId);
+  const isMe = (id: string) =>
+    id === user.id ||
+    (user.numericId != null && (id === user.numericId || id === `id${user.numericId}`));
   const totalBids = lots.flatMap((l) => l.bids).filter((b) => isMe(b.userId)).length;
   const wins = lots.filter((l) => l.status === "finished" && l.winnerId != null && isMe(l.winnerId)).length;
 
@@ -65,8 +67,10 @@ export function ProfileScreen({ user, lots }: { user: User; lots: Lot[] }) {
       </div>
       <div className="flex-1 overflow-y-auto px-4 pb-4">
         <div className="bg-white border border-[#E8E8E8] rounded-2xl p-5 mt-3 mb-4 flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-[#2787F5] text-white flex items-center justify-center text-xl font-bold shrink-0">
-            {user.avatar}
+          <div className="w-16 h-16 rounded-full bg-[#2787F5] text-white flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden">
+            {user.photoUrl
+              ? <img src={user.photoUrl} alt={user.name} className="w-full h-full object-cover" />
+              : user.avatar}
           </div>
           <div>
             <p className="font-bold text-[18px] text-[#1C1C1E]">{user.name}</p>

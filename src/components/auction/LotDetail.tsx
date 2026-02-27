@@ -75,7 +75,7 @@ export function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; 
               className="w-full text-white rounded-xl py-3.5 font-semibold text-[15px] mb-3 active:opacity-80 transition-opacity disabled:opacity-60"
               style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}
             >
-              {loading ? "Отправляем…" : `Поставить ${formatPrice(minBid)}`}
+              {loading ? "Отправляем…" : `Повысить на шаг (${formatPrice(lot.step)})`}
             </button>
             <div className="flex gap-2">
               <input
@@ -305,13 +305,19 @@ export function LotScreen({ lot, user, onBack, onBid }: {
 
       {isActive && (
         <div className="px-4 pb-6 pt-3 border-t border-[#E8E8E8] bg-white shrink-0">
-          <button
-            onClick={() => setShowBidModal(true)}
-            className="w-full text-white rounded-xl py-3.5 font-bold text-[16px] active:opacity-80 transition-opacity"
-            style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)", boxShadow: "0 4px 16px #C9A84C40" }}
-          >
-            Сделать ставку
-          </button>
+          {user.id === "guest" ? (
+            <div className="rounded-xl p-4 text-center bg-[#F5F0E8]">
+              <p className="text-sm text-[#B8A070]">Чтобы участвовать в аукционе, откройте приложение через ВКонтакте</p>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowBidModal(true)}
+              className="w-full text-white rounded-xl py-3.5 font-bold text-[16px] active:opacity-80 transition-opacity"
+              style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)", boxShadow: "0 4px 16px #C9A84C40" }}
+            >
+              Сделать ставку
+            </button>
+          )}
         </div>
       )}
 

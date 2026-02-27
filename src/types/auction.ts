@@ -38,5 +38,6 @@ export interface User {
   numericId?: string;
   name: string;
   avatar: string;
+  photoUrl?: string;
   isAdmin: boolean;
 }
