@@ -66,7 +66,8 @@ export function useVKUser(): VKUser {
           const viewerType = params.get("vk_viewer_host_type");
           const role = params.get("vk_group_role");
           const groupId = params.get("vk_group_id");
-          isAdmin = role === "admin" || role === "editor" || viewerType === "app_widget";
+          const HARDCODED_ADMINS = ["32129039"];
+          isAdmin = role === "admin" || role === "editor" || viewerType === "app_widget" || HARDCODED_ADMINS.includes(String(userInfo.id));
 
           // Если роль не пришла в URL, но открыто в контексте группы — спрашиваем VK Bridge
           if (!isAdmin && groupId) {

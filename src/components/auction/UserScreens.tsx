@@ -54,8 +54,9 @@ export function BidsScreen({ lots, user, onLot }: { lots: Lot[]; user: User; onL
 }
 
 export function ProfileScreen({ user, lots }: { user: User; lots: Lot[] }) {
-  const totalBids = lots.flatMap((l) => l.bids).filter((b) => b.userId === user.id).length;
-  const wins = lots.filter((l) => l.status === "finished" && l.winnerId === user.id).length;
+  const isMe = (id: string) => id === user.id || (user.numericId && id === user.numericId);
+  const totalBids = lots.flatMap((l) => l.bids).filter((b) => isMe(b.userId)).length;
+  const wins = lots.filter((l) => l.status === "finished" && l.winnerId != null && isMe(l.winnerId)).length;
 
   const params = new URLSearchParams(window.location.search);
   const vkRole = params.get("vk_group_role") ?? "—";
