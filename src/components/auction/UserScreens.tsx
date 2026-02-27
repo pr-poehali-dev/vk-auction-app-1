@@ -57,6 +57,12 @@ export function ProfileScreen({ user, lots }: { user: User; lots: Lot[] }) {
   const totalBids = lots.flatMap((l) => l.bids).filter((b) => b.userId === user.id).length;
   const wins = lots.filter((l) => l.status === "finished" && l.winnerId === user.id).length;
 
+  const params = new URLSearchParams(window.location.search);
+  const vkRole = params.get("vk_group_role") ?? "—";
+  const vkViewerHost = params.get("vk_viewer_host_type") ?? "—";
+  const vkGroupId = params.get("vk_group_id") ?? "—";
+  const vkUserId = params.get("vk_user_id") ?? "—";
+
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 pt-4 pb-3 bg-white border-b border-[#E8E8E8]">
@@ -86,6 +92,17 @@ export function ProfileScreen({ user, lots }: { user: User; lots: Lot[] }) {
               <p className="text-xs text-[#767676]">{s.label}</p>
             </div>
           ))}
+        </div>
+
+        <div className="bg-[#FFF8E1] border border-[#FFE082] rounded-2xl p-4 mb-4">
+          <p className="font-semibold text-[#1C1C1E] mb-2 text-sm">Параметры сессии VK</p>
+          <div className="space-y-1 text-xs font-mono">
+            <div className="flex gap-2"><span className="text-[#888] w-36 shrink-0">vk_group_role</span><span className="font-bold text-[#1C1C1E]">{vkRole}</span></div>
+            <div className="flex gap-2"><span className="text-[#888] w-36 shrink-0">vk_viewer_host_type</span><span className="font-bold text-[#1C1C1E]">{vkViewerHost}</span></div>
+            <div className="flex gap-2"><span className="text-[#888] w-36 shrink-0">vk_group_id</span><span className="font-bold text-[#1C1C1E]">{vkGroupId}</span></div>
+            <div className="flex gap-2"><span className="text-[#888] w-36 shrink-0">vk_user_id</span><span className="font-bold text-[#1C1C1E]">{vkUserId}</span></div>
+            <div className="flex gap-2"><span className="text-[#888] w-36 shrink-0">isAdmin</span><span className={`font-bold ${user.isAdmin ? "text-green-600" : "text-red-500"}`}>{user.isAdmin ? "true ✓" : "false ✗"}</span></div>
+          </div>
         </div>
 
         <div className="bg-[#F0F2F5] rounded-2xl p-4 text-sm text-[#767676]">
