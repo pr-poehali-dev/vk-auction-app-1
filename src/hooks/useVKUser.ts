@@ -65,7 +65,29 @@ export function useVKUser(): VKUser {
           const params = new URLSearchParams(window.location.search);
           const viewerType = params.get("vk_viewer_host_type");
           const role = params.get("vk_group_role");
+          const groupId = params.get("vk_group_id");
           isAdmin = role === "admin" || role === "editor" || viewerType === "app_widget";
+
+          // Если роль не пришла в URL, но открыто в контексте группы — спрашиваем VK Bridge
+          if (!isAdmin && groupId) {
+            try {
+              const memberRes = await withTimeout(
+                bridge.send("VKWebAppCallAPIMethod", {
+                  method: "groups.getMember",
+                  params: {
+                    group_id: groupId,
+                    user_id: String(userInfo.id),
+                    fields: "role",
+                    v: "5.131",
+                  },
+                }),
+                3000
+              ) as Record<string, unknown>;
+              const items = (memberRes.response as Record<string, unknown>)?.items as Array<Record<string, unknown>> | undefined;
+              const memberRole = items?.[0]?.role as string | undefined;
+              isAdmin = memberRole === "admin" || memberRole === "editor" || memberRole === "moderator";
+            } catch { /* ignore */ }
+          }
         } catch (_e) { isAdmin = false; }
 
         const screenName = (userInfo as Record<string, unknown>).screen_name as string | undefined;
