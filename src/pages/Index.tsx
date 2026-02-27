@@ -66,6 +66,7 @@ export function MobileShell() {
               {screen === "catalog" && <CatalogScreen lots={lots} onLot={goLot} isAdmin={user.isAdmin} />}
               {screen === "lot" && activeLot && (
                 <LotScreen
+                  key={activeLot.id}
                   lot={activeLot}
                   user={user}
                   onBack={() => { setScreen("catalog"); loadLots(); }}

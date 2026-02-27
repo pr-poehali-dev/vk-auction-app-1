@@ -62,7 +62,7 @@ export function DesktopCatalog({ lots, user, onBid }: { lots: Lot[]; user: User;
       {/* Right: detail */}
       <div className="flex-1 overflow-y-auto p-6 bg-[#F7F4EF]">
         {selectedLot ? (
-          <DesktopLotDetail lot={selectedLot} user={user} onBid={onBid} />
+          <DesktopLotDetail key={selectedLot.id} lot={selectedLot} user={user} onBid={onBid} />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-[#C5B89A]">
             <Icon name="MousePointerClick" size={40} className="mb-3 opacity-40" />
