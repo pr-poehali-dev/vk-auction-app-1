@@ -47,7 +47,7 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
         startPrice: Number(form.startPrice),
         step: Number(form.step),
         antiSnipeMinutes: Number(form.antiSnipeMinutes),
-        endsAt: new Date(form.endsAt + ":00+03:00"),
+        endsAt: new Date(form.endsAt),
       });
       (onBack ?? onCancel)?.();
     } catch (err) {
