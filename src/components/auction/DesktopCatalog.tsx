@@ -32,6 +32,20 @@ export function DesktopCatalog({ lots, user, onBid, onAutoBid }: { lots: Lot[]; 
     <div className="flex h-full gap-0">
       {/* Left: list */}
       <div className="flex flex-col w-[480px] shrink-0 border-r border-[#EDE8DF] bg-[#F7F4EF]">
+        {user.id === "guest" && (
+          <div className="mx-4 mt-4 rounded-xl p-3.5 flex items-center gap-3 shrink-0" style={{ background: "#EEF5FF", border: "1px solid #C5D9F5" }}>
+            <Icon name="LogIn" size={18} className="text-[#2787F5] shrink-0" />
+            <p className="text-[13px] text-[#1C1A16] font-medium flex-1 leading-snug">Войдите через ВКонтакте, чтобы делать ставки</p>
+            <a
+              href="https://vk.com/app54464410"
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0 bg-[#2787F5] text-white rounded-lg px-3 py-1.5 text-[12px] font-semibold whitespace-nowrap"
+            >
+              Войти
+            </a>
+          </div>
+        )}
         <div className="px-5 pt-5 pb-3 bg-white border-b border-[#EDE8DF]">
           <h1 className="text-[22px] font-bold text-[#1C1A16] mb-3" style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.02em" }}>
             Лоты
