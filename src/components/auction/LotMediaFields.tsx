@@ -34,8 +34,14 @@ export function LotMediaFields({ form, set, videoUploading, uploadProgress, vide
     if (!videoUrl?.startsWith("https://cdn.poehali.dev")) return;
     setThumbLoading(true);
     try {
-      const rangeResp = await fetch(videoUrl, { headers: { Range: "bytes=0-5242880" } });
-      const videoBlob = await rangeResp.blob();
+      const proxyResp = await fetch(UPLOAD_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "proxy_video_chunk", url: videoUrl }),
+      });
+      const { data: b64, contentType } = await proxyResp.json();
+      const byteArr = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const videoBlob = new Blob([byteArr], { type: contentType || "video/mp4" });
       const blobUrl = URL.createObjectURL(videoBlob);
       await new Promise<void>((resolve, reject) => {
         const video = document.createElement("video");
