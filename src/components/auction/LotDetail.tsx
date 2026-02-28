@@ -82,27 +82,41 @@ export function LotScreen({ lot, user, onBack, onBid, onAutoBid }: {
                 Открыть в ВКонтакте
               </a>
             </div>
-          ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={() => requireMember("bid")}
-                disabled={checkingMember}
-                className="flex-1 text-white rounded-xl py-3.5 font-bold text-[16px] active:opacity-80 transition-opacity disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)", boxShadow: "0 4px 16px #C9A84C40" }}
-              >
-                {checkingMember ? "…" : "Сделать ставку"}
-              </button>
-              <button
-                onClick={() => requireMember("autobid")}
-                disabled={checkingMember}
-                title="Автоставка"
-                className={`w-14 rounded-xl flex items-center justify-center transition-colors active:opacity-80 disabled:opacity-60 ${lot.myAutoBid ? "bg-[#2787F5] text-white" : "bg-[#EEF5FF] text-[#2787F5]"}`}
-                style={{ border: lot.myAutoBid ? "none" : "1.5px solid #C5D9F5" }}
-              >
-                <Icon name="Bot" size={20} />
-              </button>
-            </div>
-          )}
+          ) : (() => {
+            const leader = lot.bids[0];
+            const isLeading = leader?.userId === user.id;
+            return (
+              <div className="flex gap-2">
+                {isLeading ? (
+                  <div
+                    className="flex-1 rounded-xl py-3.5 font-bold text-[16px] flex items-center justify-center gap-2"
+                    style={{ background: "linear-gradient(135deg, #2E7D32, #43A047)", color: "#fff", boxShadow: "0 4px 16px #2E7D3240" }}
+                  >
+                    <Icon name="Crown" size={18} />
+                    Вы лидируете
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => requireMember("bid")}
+                    disabled={checkingMember}
+                    className="flex-1 text-white rounded-xl py-3.5 font-bold text-[16px] active:opacity-80 transition-opacity disabled:opacity-60"
+                    style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)", boxShadow: "0 4px 16px #C9A84C40" }}
+                  >
+                    {checkingMember ? "…" : "Сделать ставку"}
+                  </button>
+                )}
+                <button
+                  onClick={() => requireMember("autobid")}
+                  disabled={checkingMember}
+                  title="Автоставка"
+                  className={`w-14 rounded-xl flex items-center justify-center transition-colors active:opacity-80 disabled:opacity-60 ${lot.myAutoBid ? "bg-[#2787F5] text-white" : "bg-[#EEF5FF] text-[#2787F5]"}`}
+                  style={{ border: lot.myAutoBid ? "none" : "1.5px solid #C5D9F5" }}
+                >
+                  <Icon name="Bot" size={20} />
+                </button>
+              </div>
+            );
+          })()}
         </div>
       )}
 

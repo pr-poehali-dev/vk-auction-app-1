@@ -179,9 +179,9 @@ export function DesktopLotDetail({
         </div>
       )}
       {isActive && user.id !== "guest" && (
-        <div className="rounded-2xl p-4 mb-4" style={{ border: "1px solid #EDE0C8", background: "#fff" }}>
+        <div className="rounded-2xl p-4 mb-4" style={{ border: leader?.userId === user.id ? "1px solid #A5D6A7" : "1px solid #EDE0C8", background: "#fff" }}>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-[#1C1A16]">Сделать ставку</p>
+            <p className="text-sm font-medium text-[#1C1A16]">{leader?.userId === user.id ? "Ваша ставка" : "Сделать ставку"}</p>
             {onAutoBid && user.id !== "guest" && (
               <button
                 onClick={() => setShowAutoBidModal(true)}
@@ -192,7 +192,15 @@ export function DesktopLotDetail({
               </button>
             )}
           </div>
-          {bidResult ? (
+          {leader?.userId === user.id ? (
+            <div
+              className="w-full rounded-xl py-3 font-bold text-[15px] flex items-center justify-center gap-2"
+              style={{ background: "linear-gradient(135deg, #2E7D32, #43A047)", color: "#fff", boxShadow: "0 4px 16px #2E7D3240" }}
+            >
+              <Icon name="Crown" size={18} />
+              Вы лидируете
+            </div>
+          ) : bidResult ? (
             <div className={`rounded-xl p-4 text-center ${bidResult.type === "success" ? "bg-[#E8F5E9] text-[#2E7D32]" : "bg-[#FFEBEE] text-[#C62828]"}`}>
               <Icon name={bidResult.type === "success" ? "CheckCircle" : "XCircle"} size={24} className="mx-auto mb-2" />
               <p className="font-semibold text-sm">{bidResult.text}</p>
