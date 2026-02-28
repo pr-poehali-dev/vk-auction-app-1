@@ -108,9 +108,14 @@ def process_auto_bids(conn, cur, lot_id: int, current_price: int, current_leader
         try:
             cur.execute("BEGIN")
             place_bid_internal(cur, lot_id, next_bid, auto_uid, auto_uname, auto_uavatar, now)
+            # Удаляем исчерпанные автоставки (max_amount < новая текущая цена)
+            cur.execute(f"""
+                DELETE FROM {SCHEMA}.auto_bids
+                WHERE lot_id = {lot_id} AND max_amount < {next_bid}
+            """)
             conn.commit()
             print(f"[auto-bid] auto bid placed: lot={lot_id} user={auto_uid} amount={next_bid}")
-            leader_id = auto_uid  # следующая итерация — ищем перебивающего для нового лидера
+            leader_id = auto_uid
         except Exception as e:
             print(f"[auto-bid] skip: {e}")
             try:

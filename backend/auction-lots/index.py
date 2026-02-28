@@ -124,7 +124,16 @@ def handler(event: dict, context) -> dict:
             """)
             ab = cur.fetchone()
             if ab:
-                lot["myAutoBid"] = {"maxAmount": ab[0], "userId": ab[1]}
+                current_price = lot.get("currentPrice") or lot.get("current_price", 0)
+                if int(ab[0]) < int(current_price):
+                    # Автоставка исчерпана — удаляем
+                    cur.execute(f"""
+                        DELETE FROM {SCHEMA}.auto_bids
+                        WHERE lot_id = {int(lot_id)} AND user_id = '{uid}'
+                    """)
+                    conn.commit()
+                else:
+                    lot["myAutoBid"] = {"maxAmount": ab[0], "userId": ab[1]}
 
         conn.close()
         return {"statusCode": 200, "headers": CORS, "body": json.dumps(lot)}
