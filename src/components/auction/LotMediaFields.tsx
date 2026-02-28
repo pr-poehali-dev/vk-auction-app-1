@@ -49,7 +49,7 @@ export function LotMediaFields({ form, set, videoUploading, uploadProgress, vide
         video.muted = true;
         video.playsInline = true;
         video.src = blobUrl;
-        video.currentTime = 1;
+        video.currentTime = 0.1;
         video.addEventListener("seeked", async () => {
           const canvas = document.createElement("canvas");
           canvas.width = video.videoWidth || 640;

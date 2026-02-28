@@ -110,12 +110,12 @@ def handler(event: dict, context) -> dict:
         return ok({"ok": True})
 
     elif action == "proxy_video_chunk":
-        # Скачиваем начало видео с CDN на бэкенде (нет CORS) и возвращаем base64
+        # Скачиваем первые 512KB видео и возвращаем base64 — достаточно для seeked-кадра
         import urllib.request
         video_url = body.get("url", "")
         if not video_url.startswith("https://cdn.poehali.dev"):
             return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "invalid url"})}
-        req = urllib.request.Request(video_url, headers={"Range": "bytes=0-5242880"})
+        req = urllib.request.Request(video_url, headers={"Range": "bytes=0-524288"})
         with urllib.request.urlopen(req, timeout=15) as resp:
             chunk = resp.read()
         return ok({"data": base64.b64encode(chunk).decode(), "contentType": "video/mp4"})
