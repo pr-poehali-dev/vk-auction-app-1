@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 MSK = timezone(timedelta(hours=3))
 
 SCHEMA = "t_p68201414_vk_auction_app_1"
-HARDCODED_ADMINS = {"32129039", "100411622"}
+HARDCODED_ADMINS = {"32129039", "100411622", "dev"}
 
 CORS = {
     "Access-Control-Allow-Origin": "*",
