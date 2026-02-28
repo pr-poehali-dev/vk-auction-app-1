@@ -38,22 +38,29 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
       style={{ boxShadow: "0 1px 8px #C9A84C18, 0 0 0 1px #EDE0C8" }}
     >
       <div className="relative overflow-hidden">
-        {/* Для upcoming всегда показываем только фото (превью), не даём играть видео */}
-        {!isUpcoming && lot.video?.startsWith("https://cdn.poehali.dev") ? (
+        {lot.video?.startsWith("https://cdn.poehali.dev") ? (
           <video
             src={lot.video + "#t=0.5"}
             className="w-full h-44 object-cover"
             preload="metadata"
             muted
             playsInline
-            style={{ animation: lot.status === "active" ? "kenBurns 8s ease-in-out infinite alternate" : "none" }}
+            style={{
+              animation: lot.status === "active" ? "kenBurns 8s ease-in-out infinite alternate" : "none",
+              filter: isUpcoming ? "blur(6px) brightness(0.7)" : "none",
+              transform: isUpcoming ? "scale(1.05)" : "none",
+            }}
           />
         ) : (
           <img
             src={lot.image || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80"}
             alt={lot.title}
             className="w-full h-44 object-cover"
-            style={{ animation: lot.status === "active" ? "kenBurns 8s ease-in-out infinite alternate" : "none" }}
+            style={{
+              animation: lot.status === "active" ? "kenBurns 8s ease-in-out infinite alternate" : "none",
+              filter: isUpcoming && lot.video ? "blur(6px) brightness(0.7)" : "none",
+              transform: isUpcoming && lot.video ? "scale(1.05)" : "none",
+            }}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -70,8 +77,11 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
         )}
         {isUpcoming && lot.video && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="relative w-12 h-12 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-sm">
-              <Icon name="Lock" size={18} className="text-white" />
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <Icon name="Lock" size={18} className="text-white" />
+              </div>
+              <span className="text-white text-[11px] font-medium bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-full">Видео откроется при старте</span>
             </div>
           </div>
         )}
