@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot } from "@/types/auction";
-import { formatTimer, formatPrice, getStatusLabel, useTimer, firstName, vkProfileUrl, deduplicateBids } from "@/components/auction/lotUtils";
+import { formatTimer, formatPrice, getStatusLabel, useTimer, useCountdown, firstName, vkProfileUrl, deduplicateBids } from "@/components/auction/lotUtils";
 
 export function TimerBadge({ endsAt }: { endsAt: Date }) {
   const ms = useTimer(endsAt);
@@ -14,11 +14,22 @@ export function TimerBadge({ endsAt }: { endsAt: Date }) {
   );
 }
 
+function StartsInBadge({ startsAt }: { startsAt: Date }) {
+  const ms = useCountdown(startsAt);
+  if (ms <= 0) return null;
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-[#2787F5]/15 text-[#2787F5]">
+      <Icon name="Clock" size={10} />
+      Старт через {formatTimer(ms)}
+    </span>
+  );
+}
+
 export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: () => void; isAdmin?: boolean }) {
   const status = getStatusLabel(lot);
   const leaderName = lot.leaderName ?? lot.bids[0]?.userName;
   const leaderAvatar = lot.leaderAvatar ?? lot.bids[0]?.userAvatar;
-
+  const isUpcoming = lot.status === "upcoming";
 
   return (
     <div
@@ -27,8 +38,8 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
       style={{ boxShadow: "0 1px 8px #C9A84C18, 0 0 0 1px #EDE0C8" }}
     >
       <div className="relative overflow-hidden">
-        {lot.video?.startsWith("https://cdn.poehali.dev") ? (
-          /* Первый кадр своего видео — грузит только метаданные (~несколько КБ) */
+        {/* Для upcoming всегда показываем только фото (превью), не даём играть видео */}
+        {!isUpcoming && lot.video?.startsWith("https://cdn.poehali.dev") ? (
           <video
             src={lot.video + "#t=0.5"}
             className="w-full h-44 object-cover"
@@ -46,7 +57,7 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        {lot.video && (
+        {!isUpcoming && lot.video && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="relative flex items-center justify-center">
               <span className="absolute w-14 h-14 rounded-full animate-ping" style={{ background: "#C9A84C", opacity: 0.25 }} />
@@ -57,14 +68,20 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
             </div>
           </div>
         )}
+        {isUpcoming && lot.video && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative w-12 h-12 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <Icon name="Lock" size={18} className="text-white" />
+            </div>
+          </div>
+        )}
         <span className={`absolute top-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full ${status.color}`}>
           {status.label}
         </span>
-        {lot.status === "active" && (
-          <div className="absolute top-2 right-2">
-            <TimerBadge endsAt={lot.endsAt} />
-          </div>
-        )}
+        <div className="absolute top-2 right-2">
+          {lot.status === "active" && <TimerBadge endsAt={lot.endsAt} />}
+          {lot.status === "upcoming" && lot.startsAt && <StartsInBadge startsAt={lot.startsAt} />}
+        </div>
       </div>
       <div className="p-3">
         <p className="font-semibold text-[15px] text-[#1C1A16] leading-snug mb-2 line-clamp-1">{lot.title}</p>

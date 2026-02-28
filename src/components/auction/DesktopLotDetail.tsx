@@ -1,31 +1,36 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot, User } from "@/types/auction";
-import { formatPrice, formatTime, getStatusLabel, useTimer, firstName, vkProfileUrl } from "@/components/auction/lotUtils";
-import { parseVKVideoEmbed } from "@/components/auction/LotDetail";
+import { formatPrice, formatTime, formatTimer, getStatusLabel, useTimer, useCountdown, firstName, vkProfileUrl } from "@/components/auction/lotUtils";
+import { parseVKVideoEmbed, AutoBidModal } from "@/components/auction/LotDetail";
 import { DesktopTimerBadge } from "@/components/auction/DesktopLotCard";
 
 export function DesktopLotDetail({
   lot,
   user,
   onBid,
+  onAutoBid,
 }: {
   lot: Lot;
   user: User;
   onBid: (lotId: string, amount: number) => Promise<string>;
+  onAutoBid?: (lotId: string, maxAmount: number) => Promise<string>;
 }) {
   const [customAmount, setCustomAmount] = useState("");
   const [bidResult, setBidResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [bidLoading, setBidLoading] = useState(false);
+  const [showAutoBidModal, setShowAutoBidModal] = useState(false);
   const ms = useTimer(lot.endsAt);
+  const startsInMs = useCountdown(lot.startsAt);
   const isActive = lot.status === "active" && ms > 0;
+  const isUpcoming = lot.status === "upcoming";
   const minBid = lot.currentPrice + lot.step;
   const status = getStatusLabel(lot);
   const leader = lot.bids[0];
   const isAdmin = user.isAdmin;
   const vkEmbedUrl = lot.video ? parseVKVideoEmbed(lot.video) : null;
   const isS3Video = Boolean(lot.video?.startsWith("https://cdn.poehali.dev"));
-  const hasVideo = Boolean(lot.video && (vkEmbedUrl || isS3Video));
+  const hasVideo = !isUpcoming && Boolean(lot.video && (vkEmbedUrl || isS3Video));
 
   async function handleBid(amount: number) {
     setBidLoading(true);
@@ -42,6 +47,20 @@ export function DesktopLotDetail({
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
+      {/* Таймер до начала (upcoming) */}
+      {isUpcoming && lot.startsAt && startsInMs > 0 && (
+        <div className="rounded-2xl p-4 mb-4 flex items-center gap-3" style={{ background: "#EEF5FF", border: "1px solid #C5D9F5" }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: "#2787F5" }}>
+            <Icon name="Clock" size={18} className="text-white" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-[#2787F5]">Аукцион начнётся через</p>
+            <p className="text-[22px] font-bold text-[#1C1C1E] leading-none">{formatTimer(startsInMs)}</p>
+            <p className="text-[11px] text-[#767676] mt-0.5">{lot.startsAt.toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
+          </div>
+        </div>
+      )}
+
       {/* Media */}
       <div className="shrink-0 relative rounded-2xl overflow-hidden mb-4" style={{ aspectRatio: "16/9", background: "#000" }}>
         {hasVideo ? (
@@ -75,7 +94,7 @@ export function DesktopLotDetail({
       <div className="rounded-2xl p-4 mb-4" style={{ background: "#FAF7F0", border: "1px solid #EDE0C8" }}>
         <div className="flex justify-between items-start mb-3">
           <div>
-            <p className="text-xs text-[#B8A070] mb-0.5">Текущая ставка</p>
+            <p className="text-xs text-[#B8A070] mb-0.5">{isUpcoming ? "Стартовая цена" : "Текущая ставка"}</p>
             <p className="text-[28px] font-bold leading-none" style={{ color: "#B8922A" }}>{formatPrice(lot.currentPrice)}</p>
           </div>
           <div className="text-right">
@@ -128,7 +147,18 @@ export function DesktopLotDetail({
       {/* Bid area */}
       {isActive && (
         <div className="rounded-2xl p-4 mb-4" style={{ border: "1px solid #EDE0C8", background: "#fff" }}>
-          <p className="text-sm font-medium text-[#1C1A16] mb-3">Сделать ставку</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-[#1C1A16]">Сделать ставку</p>
+            {onAutoBid && user.id !== "guest" && (
+              <button
+                onClick={() => setShowAutoBidModal(true)}
+                className={`flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-xl transition-colors ${lot.myAutoBid ? "bg-[#2787F5] text-white" : "bg-[#EEF5FF] text-[#2787F5]"}`}
+              >
+                <Icon name="Bot" size={13} />
+                {lot.myAutoBid ? `Авто до ${formatPrice(lot.myAutoBid.maxAmount)}` : "Автоставка"}
+              </button>
+            )}
+          </div>
           {bidResult ? (
             <div className={`rounded-xl p-4 text-center ${bidResult.type === "success" ? "bg-[#E8F5E9] text-[#2E7D32]" : "bg-[#FFEBEE] text-[#C62828]"}`}>
               <Icon name={bidResult.type === "success" ? "CheckCircle" : "XCircle"} size={24} className="mx-auto mb-2" />
@@ -171,6 +201,14 @@ export function DesktopLotDetail({
             </>
           )}
         </div>
+      )}
+      {showAutoBidModal && onAutoBid && (
+        <AutoBidModal
+          lot={lot}
+          user={user}
+          onClose={() => setShowAutoBidModal(false)}
+          onSave={(maxAmount) => onAutoBid(lot.id, maxAmount)}
+        />
       )}
 
       {/* Bid history */}

@@ -27,8 +27,9 @@ export function apiGetLots(): Promise<ApiResponse | ApiResponse[]> {
   return apiFetch(API.lots);
 }
 
-export function apiGetLot(id: number): Promise<ApiResponse | ApiResponse[]> {
-  return apiFetch(`${API.lots}?id=${id}`);
+export function apiGetLot(id: number, userId?: string): Promise<ApiResponse | ApiResponse[]> {
+  const qs = userId ? `?id=${id}&userId=${encodeURIComponent(userId)}` : `?id=${id}`;
+  return apiFetch(`${API.lots}${qs}`);
 }
 
 export function apiPlaceBid(lotId: number, amount: number, user: User): Promise<ApiResponse | ApiResponse[]> {
@@ -40,6 +41,13 @@ export function apiPlaceBid(lotId: number, amount: number, user: User): Promise<
 
 export function apiAdmin(body: object): Promise<ApiResponse | ApiResponse[]> {
   return apiFetch(API.admin, { method: "POST", body: JSON.stringify(body) });
+}
+
+export function apiSetAutoBid(lotId: number, maxAmount: number, user: User): Promise<ApiResponse | ApiResponse[]> {
+  return apiFetch(API.bid, {
+    method: "POST",
+    body: JSON.stringify({ action: "auto_bid", lotId, maxAmount, userId: user.id, userName: user.name, userAvatar: user.avatar }),
+  });
 }
 
 function normalizeBid(b: ApiResponse): Bid {
@@ -55,6 +63,8 @@ function normalizeBid(b: ApiResponse): Bid {
 
 export function normalizeLot(r: ApiResponse): Lot {
   const bidsRaw = r.bids as ApiResponse[] | undefined;
+  const startsAtRaw = r.startsAt ?? r.starts_at;
+  const myAutoBidRaw = r.myAutoBid as ApiResponse | undefined;
   return {
     id: String(r.id),
     title: String(r.title ?? ""),
@@ -65,6 +75,7 @@ export function normalizeLot(r: ApiResponse): Lot {
     startPrice: Number(r.startPrice ?? r.start_price ?? 0),
     currentPrice: Number(r.currentPrice ?? r.current_price ?? 0),
     step: Number(r.step ?? 100),
+    startsAt: startsAtRaw ? new Date(String(startsAtRaw)) : undefined,
     endsAt: new Date(String(r.endsAt ?? r.ends_at ?? "")),
     status: (r.status as Lot["status"]) ?? "active",
     winnerId: r.winnerId as string | undefined ?? r.winner_id as string | undefined,
@@ -77,5 +88,6 @@ export function normalizeLot(r: ApiResponse): Lot {
     leaderAvatar: r.leaderAvatar as string | undefined,
     bidCount: Number(r.bidCount ?? 0),
     bids: bidsRaw ? bidsRaw.map(normalizeBid) : [],
+    myAutoBid: myAutoBidRaw ? { maxAmount: Number(myAutoBidRaw.maxAmount ?? myAutoBidRaw.max_amount), userId: String(myAutoBidRaw.userId ?? myAutoBidRaw.user_id ?? "") } : undefined,
   };
 }

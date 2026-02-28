@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import bridge from "@vkontakte/vk-bridge";
 import { useVKUser } from "@/hooks/useVKUser";
 import type { Lot, User, Screen } from "@/types/auction";
-import { apiGetLots, apiGetLot, apiPlaceBid, apiAdmin, normalizeLot } from "@/api/auction";
+import { apiGetLots, apiGetLot, apiPlaceBid, apiSetAutoBid, apiAdmin, normalizeLot } from "@/api/auction";
 
 export function useAuction() {
   const [screen, setScreen] = useState<Screen>("catalog");
@@ -60,7 +60,7 @@ export function useAuction() {
 
   async function loadLot(id: string) {
     try {
-      const data = await apiGetLot(Number(id));
+      const data = await apiGetLot(Number(id), user.id !== "guest" ? user.id : undefined);
       if (!Array.isArray(data) && data && !data.error) {
         setActiveLot(normalizeLot(data as Record<string, unknown>));
       }
@@ -99,6 +99,7 @@ export function useAuction() {
         videoDuration: data.videoDuration,
         startPrice: data.startPrice,
         step: data.step,
+        startsAt: data.startsAt?.toISOString() ?? null,
         endsAt: data.endsAt?.toISOString(),
         antiSnipe: data.antiSnipe,
         antiSnipeMinutes: data.antiSnipeMinutes,
@@ -114,6 +115,7 @@ export function useAuction() {
         video: data.video,
         videoDuration: data.videoDuration,
         step: data.step,
+        startsAt: data.startsAt?.toISOString() ?? null,
         endsAt: data.endsAt?.toISOString(),
         antiSnipe: data.antiSnipe,
         antiSnipeMinutes: data.antiSnipeMinutes,
@@ -121,6 +123,17 @@ export function useAuction() {
     }
     if (res?.error) throw new Error(String(res.error));
     await loadLots();
+  }
+
+  async function handleAutoBid(lotId: string, maxAmount: number): Promise<string> {
+    try {
+      const res = await apiSetAutoBid(Number(lotId), maxAmount, user) as Record<string, unknown>;
+      if (res.error) return String(res.error);
+      await loadLot(lotId);
+      return "ok";
+    } catch {
+      return "Ошибка сети. Попробуйте ещё раз.";
+    }
   }
 
   async function handleUpdateStatus(id: string, status: Lot["paymentStatus"]) {
@@ -153,6 +166,7 @@ export function useAuction() {
     vkUser,
     goLot,
     handleBid,
+    handleAutoBid,
     handleSaveLot,
     handleUpdateStatus,
     handleStopLot,

@@ -9,6 +9,11 @@ export interface Bid {
   createdAt: Date;
 }
 
+export interface AutoBid {
+  maxAmount: number;
+  userId: string;
+}
+
 export interface Lot {
   id: string;
   title: string;
@@ -19,6 +24,7 @@ export interface Lot {
   startPrice: number;
   currentPrice: number;
   step: number;
+  startsAt?: Date;
   endsAt: Date;
   status: "active" | "finished" | "upcoming" | "cancelled";
   winnerId?: string;
@@ -31,6 +37,7 @@ export interface Lot {
   leaderName?: string;
   leaderAvatar?: string;
   bidCount?: number;
+  myAutoBid?: AutoBid;
 }
 
 export interface User {

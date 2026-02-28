@@ -4,7 +4,7 @@ import type { Lot, User } from "@/types/auction";
 import { DesktopLotCard } from "@/components/auction/DesktopLotCard";
 import { DesktopLotDetail } from "@/components/auction/DesktopLotDetail";
 
-export function DesktopCatalog({ lots, user, onBid }: { lots: Lot[]; user: User; onBid: (lotId: string, amount: number) => Promise<string> }) {
+export function DesktopCatalog({ lots, user, onBid, onAutoBid }: { lots: Lot[]; user: User; onBid: (lotId: string, amount: number) => Promise<string>; onAutoBid?: (lotId: string, maxAmount: number) => Promise<string> }) {
   const [tab, setTab] = useState<"active" | "finished">("active");
   const [selectedId, setSelectedId] = useState<string | null>(() => {
     const first = lots.find((l) => l.status === "active" || l.status === "upcoming");
@@ -62,7 +62,7 @@ export function DesktopCatalog({ lots, user, onBid }: { lots: Lot[]; user: User;
       {/* Right: detail */}
       <div className="flex-1 overflow-y-auto p-6 bg-[#F7F4EF]">
         {selectedLot ? (
-          <DesktopLotDetail key={selectedLot.id} lot={selectedLot} user={user} onBid={onBid} />
+          <DesktopLotDetail key={selectedLot.id} lot={selectedLot} user={user} onBid={onBid} onAutoBid={onAutoBid} />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-[#C5B89A]">
             <Icon name="MousePointerClick" size={40} className="mb-3 opacity-40" />

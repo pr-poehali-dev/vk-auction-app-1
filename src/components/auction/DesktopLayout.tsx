@@ -12,6 +12,7 @@ export function DesktopLayout({
   user,
   loading,
   onBid,
+  onAutoBid,
   onSaveLot,
   onUpdateStatus,
   onStopLot,
@@ -20,6 +21,7 @@ export function DesktopLayout({
   user: User;
   loading: boolean;
   onBid: (lotId: string, amount: number) => Promise<string>;
+  onAutoBid?: (lotId: string, maxAmount: number) => Promise<string>;
   onSaveLot: (data: Partial<Lot>, lotId?: string | null) => Promise<void>;
   onUpdateStatus: (id: string, status: Lot["paymentStatus"]) => Promise<void>;
   onStopLot: (id: string) => Promise<void>;
@@ -101,7 +103,7 @@ export function DesktopLayout({
         ) : (
           <>
             {screen === "catalog" && (
-              <DesktopCatalog lots={lots} user={user} onBid={onBid} />
+              <DesktopCatalog lots={lots} user={user} onBid={onBid} onAutoBid={onAutoBid} />
             )}
             {screen === "bids" && (
               <div className="h-full overflow-y-auto bg-[#F7F4EF]">

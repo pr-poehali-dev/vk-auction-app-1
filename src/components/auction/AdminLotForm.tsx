@@ -10,6 +10,11 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
   onSave: (data: Partial<Lot>) => void | Promise<void>;
 }) {
   const isNew = !lot?.id;
+  function toLocalISO(d: Date) {
+    const off = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - off * 60000);
+    return local.toISOString().slice(0, 16);
+  }
   const [form, setForm] = useState<LotFormState>({
     title: lot?.title || "",
     description: lot?.description || "",
@@ -17,7 +22,8 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
     video: lot?.video || "",
     startPrice: lot?.startPrice || 1000,
     step: lot?.step || 100,
-    endsAt: lot?.endsAt ? (() => { const d = new Date(lot.endsAt); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); })() : "",
+    startsAt: lot?.startsAt ? toLocalISO(new Date(lot.startsAt)) : "",
+    endsAt: lot?.endsAt ? toLocalISO(new Date(lot.endsAt)) : "",
     antiSnipe: lot?.antiSnipe ?? true,
     antiSnipeMinutes: lot?.antiSnipeMinutes || 2,
   });
@@ -47,6 +53,7 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
         startPrice: Number(form.startPrice),
         step: Number(form.step),
         antiSnipeMinutes: Number(form.antiSnipeMinutes),
+        startsAt: form.startsAt ? new Date(form.startsAt) : undefined,
         endsAt: new Date(form.endsAt),
       });
       (onBack ?? onCancel)?.();

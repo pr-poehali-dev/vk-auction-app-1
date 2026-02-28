@@ -1,7 +1,7 @@
 """
 Админ-операции: создание лота, обновление лота, изменение статуса оплаты.
-POST / action=create  — создать лот
-POST / action=update  — обновить лот (поля + payment_status)
+POST / action=create  — создать лот (поддерживает startsAt для отложенного старта)
+POST / action=update  — обновить лот (поля + payment_status + startsAt)
 POST / action=stop    — остановить лот вручную
 """
 import json
@@ -56,24 +56,41 @@ def handler(event: dict, context) -> dict:
             start_price = int(body.get("startPrice", 1000))
             step = int(body.get("step", 100))
             ends_at = body.get("endsAt", "")
+            starts_at = body.get("startsAt")
             anti_snipe = "true" if body.get("antiSnipe", True) else "false"
             anti_snipe_min = int(body.get("antiSnipeMinutes", 2))
             vd_sql = f", {int(video_duration)}" if video_duration else ", NULL"
 
-            print(f"[auction-admin] create: title={title!r} ends_at={ends_at!r} start_price={start_price}")
+            # Если задан starts_at и он в будущем — создаём как upcoming
+            now = datetime.now(timezone.utc)
+            if starts_at:
+                try:
+                    sa = datetime.fromisoformat(starts_at.replace("Z", "+00:00"))
+                    initial_status = "upcoming" if sa > now else "active"
+                except Exception:
+                    initial_status = "active"
+                    starts_at = None
+            else:
+                initial_status = "active"
+                starts_at = None
+
+            starts_at_sql = f"'{starts_at}'" if starts_at else "NULL"
+
+            print(f"[auction-admin] create: title={title!r} ends_at={ends_at!r} starts_at={starts_at!r} status={initial_status}")
 
             cur.execute(f"""
                 INSERT INTO {SCHEMA}.lots
-                  (title, description, image, video, start_price, current_price, step, ends_at, anti_snipe, anti_snipe_minutes, video_duration)
+                  (title, description, image, video, start_price, current_price, step,
+                   starts_at, ends_at, status, anti_snipe, anti_snipe_minutes, video_duration)
                 VALUES
                   ('{title}', '{description}', '{image}', '{video}', {start_price}, {start_price}, {step},
-                   '{ends_at}', {anti_snipe}, {anti_snipe_min}{vd_sql})
+                   {starts_at_sql}, '{ends_at}', '{initial_status}', {anti_snipe}, {anti_snipe_min}{vd_sql})
                 RETURNING id
             """)
             new_id = cur.fetchone()[0]
             conn.commit()
             conn.close()
-            print(f"[auction-admin] created lot id={new_id}")
+            print(f"[auction-admin] created lot id={new_id} status={initial_status}")
             return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True, "id": new_id})}
         except Exception as e:
             conn.rollback()
@@ -97,6 +114,23 @@ def handler(event: dict, context) -> dict:
             fields.append(f"video = '{v}'")
         if "step" in body:
             fields.append(f"step = {int(body['step'])}")
+        if "startsAt" in body:
+            sa = body["startsAt"]
+            if sa:
+                fields.append(f"starts_at = '{sa}'")
+                # Обновляем статус: если starts_at в будущем — upcoming
+                try:
+                    sa_dt = datetime.fromisoformat(sa.replace("Z", "+00:00"))
+                    now = datetime.now(timezone.utc)
+                    if sa_dt > now:
+                        fields.append("status = 'upcoming'")
+                    else:
+                        fields.append("status = 'active'")
+                except Exception:
+                    pass
+            else:
+                fields.append("starts_at = NULL")
+                fields.append("status = 'active'")
         if "endsAt" in body:
             fields.append(f"ends_at = '{body['endsAt']}'")
         if "antiSnipe" in body:
@@ -122,7 +156,7 @@ def handler(event: dict, context) -> dict:
         cur.execute(f"""
             UPDATE {SCHEMA}.lots
             SET status = 'cancelled'
-            WHERE id = {lot_id} AND status = 'active'
+            WHERE id = {lot_id} AND status IN ('active', 'upcoming')
         """)
         conn.commit()
         conn.close()

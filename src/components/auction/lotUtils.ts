@@ -67,3 +67,13 @@ export function useTimer(endsAt: Date): number {
   }, [endsAt]);
   return ms;
 }
+
+export function useCountdown(target: Date | undefined): number {
+  const [ms, setMs] = useState(() => target ? target.getTime() - Date.now() : 0);
+  useEffect(() => {
+    if (!target) return;
+    const id = setInterval(() => setMs(target.getTime() - Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [target]);
+  return ms;
+}

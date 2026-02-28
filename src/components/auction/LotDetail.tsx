@@ -1,18 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot, User, Screen } from "@/types/auction";
-import { formatPrice, formatTime, getStatusLabel, useTimer, firstName, vkProfileUrl } from "@/components/auction/lotUtils";
+import { formatPrice, formatTime, formatTimer, getStatusLabel, useTimer, useCountdown, firstName, vkProfileUrl } from "@/components/auction/lotUtils";
 import { TimerBadge } from "@/components/auction/LotCard";
 
 // ─── VK Video Player ──────────────────────────────────────────────────────────
 export function parseVKVideoEmbed(url: string): string | null {
   if (!url) return null;
-  // Извлечь src из вставленного iframe кода
   const iframeSrc = url.match(/src=["']([^"']+)["']/);
   if (iframeSrc) return iframeSrc[1];
-  // Прямая ссылка vkvideo.ru или vk.com video_ext
   if (url.includes("video_ext.php") || url.includes("vkvideo.ru")) return url;
-  // Ссылка вида vk.com/video-123_456
   const matchDirect = url.match(/vk\.com\/video(-?\d+_\d+)/);
   if (matchDirect) {
     return `https://vk.com/video_ext.php?oid=${matchDirect[1].split("_")[0]}&id=${matchDirect[1].split("_")[1]}&hd=2`;
@@ -22,6 +19,97 @@ export function parseVKVideoEmbed(url: string): string | null {
     return `https://vk.com/video_ext.php?oid=${matchZ[1].split("_")[0]}&id=${matchZ[1].split("_")[1]}&hd=2`;
   }
   return null;
+}
+
+// ─── AutoBid Modal ─────────────────────────────────────────────────────────────
+export function AutoBidModal({ lot, user, onClose, onSave }: {
+  lot: Lot;
+  user: User;
+  onClose: () => void;
+  onSave: (maxAmount: number) => Promise<string>;
+}) {
+  const [maxAmount, setMaxAmount] = useState(lot.myAutoBid ? String(lot.myAutoBid.maxAmount) : "");
+  const [result, setResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const minRequired = lot.currentPrice + lot.step;
+
+  async function handleSave() {
+    const val = Number(maxAmount);
+    if (!val || val < minRequired) {
+      setResult({ type: "error", text: `Минимум ${formatPrice(minRequired)}` });
+      return;
+    }
+    setLoading(true);
+    try {
+      const msg = await onSave(val);
+      if (msg === "ok") {
+        setResult({ type: "success", text: `Автоставка до ${formatPrice(val)} активна!` });
+      } else {
+        setResult({ type: "error", text: msg });
+      }
+    } catch {
+      setResult({ type: "error", text: "Ошибка сети. Попробуйте ещё раз." });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/30" />
+      <div
+        className="relative w-full max-w-[390px] bg-white rounded-t-2xl p-5 pb-8"
+        onClick={(e) => e.stopPropagation()}
+        style={{ animation: "slideUp 0.25s ease-out" }}
+      >
+        <div className="w-10 h-1 bg-[#E0E0E0] rounded-full mx-auto mb-4" />
+        <h3 className="font-semibold text-[17px] text-[#1C1A16] mb-1">Автоставка</h3>
+        <p className="text-sm text-[#B8A070] mb-4">
+          Система автоматически перебьёт ставку на шаг аукциона (<span className="font-semibold text-[#1C1A16]">{formatPrice(lot.step)}</span>), пока не достигнет вашего максимума
+        </p>
+
+        {result ? (
+          <div className={`rounded-xl p-4 text-center ${result.type === "success" ? "bg-[#E8F5E9] text-[#2E7D32]" : "bg-[#FFEBEE] text-[#C62828]"}`}>
+            <Icon name={result.type === "success" ? "CheckCircle" : "XCircle"} size={28} className="mx-auto mb-2" />
+            <p className="font-semibold">{result.text}</p>
+            <button onClick={onClose} className="mt-3 text-sm underline opacity-70">Закрыть</button>
+          </div>
+        ) : (
+          <>
+            {lot.myAutoBid && (
+              <div className="rounded-xl p-3 mb-4 flex items-center gap-2" style={{ background: "#FDF9F0", border: "1px solid #EDE0C8" }}>
+                <Icon name="Bot" size={16} className="text-[#B8922A]" />
+                <p className="text-sm text-[#B8922A]">Активна до <span className="font-semibold">{formatPrice(lot.myAutoBid.maxAmount)}</span></p>
+              </div>
+            )}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="number"
+                placeholder={`Максимум (от ${minRequired})`}
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                className="flex-1 rounded-xl px-3 py-3 text-[15px] outline-none"
+                style={{ border: "1px solid #EDE0C8", background: "#FAF8F4" }}
+                onFocus={(e) => (e.target.style.borderColor = "#2787F5")}
+                onBlur={(e) => (e.target.style.borderColor = "#EDE0C8")}
+              />
+              <button
+                onClick={handleSave}
+                disabled={!maxAmount || loading}
+                className="rounded-xl px-4 font-semibold text-white disabled:opacity-40 transition-opacity"
+                style={{ background: "#2787F5" }}
+              >
+                {loading ? "…" : "Сохранить"}
+              </button>
+            </div>
+            <p className="text-[11px] text-[#B8A070] text-center">
+              Текущая ставка: <span className="font-medium text-[#1C1A16]">{formatPrice(lot.currentPrice)}</span> · Шаг: <span className="font-medium text-[#1C1A16]">{formatPrice(lot.step)}</span>
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ─── Bid Modal ─────────────────────────────────────────────────────────────────
@@ -108,28 +196,31 @@ export function BidModal({ lot, user, onClose, onBid }: { lot: Lot; user: User; 
 }
 
 // ─── Screen: Lot ───────────────────────────────────────────────────────────────
-export function LotScreen({ lot, user, onBack, onBid }: {
+export function LotScreen({ lot, user, onBack, onBid, onAutoBid }: {
   lot: Lot;
   user: User;
   onBack: () => void;
   onBid: (lotId: string, amount: number) => Promise<string>;
+  onAutoBid: (lotId: string, maxAmount: number) => Promise<string>;
 }) {
   const isAdmin = user.isAdmin;
   const [showBidModal, setShowBidModal] = useState(false);
+  const [showAutoBidModal, setShowAutoBidModal] = useState(false);
   const [videoKey, setVideoKey] = useState(0);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ms = useTimer(lot.endsAt);
+  const startsInMs = useCountdown(lot.startsAt);
   const isActive = lot.status === "active" && ms > 0;
+  const isUpcoming = lot.status === "upcoming";
   const leader = lot.bids[0];
   const status = getStatusLabel(lot);
   const vkEmbedUrl = lot.video ? parseVKVideoEmbed(lot.video) : null;
   const isS3Video = Boolean(lot.video && lot.video.startsWith("https://cdn.poehali.dev"));
-  const hasVideo = Boolean(lot.video && (vkEmbedUrl || isS3Video));
+  const hasVideo = !isUpcoming && Boolean(lot.video && (vkEmbedUrl || isS3Video));
 
   function handlePlay() { setVideoPlaying(true); }
 
-  // Для ВК iframe — таймер по onLoad
   function startRestartTimer() {
     if (!lot.videoDuration || lot.videoDuration <= 0) return;
     if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
@@ -159,7 +250,6 @@ export function LotScreen({ lot, user, onBack, onBid }: {
           </div>
           <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
             {isS3Video ? (
-              /* HTML5 плеер для своего видео — звук, без рекламы, авторестарт */
               <video
                 key={videoKey}
                 className="absolute inset-0 w-full h-full bg-black"
@@ -170,7 +260,6 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                 <source src={lot.video} />
               </video>
             ) : !videoPlaying ? (
-              /* Постер для ВК — iframe не грузится до нажатия Play */
               <div
                 className="absolute inset-0 flex items-center justify-center cursor-pointer"
                 style={{ background: "#000" }}
@@ -185,7 +274,6 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                 </div>
               </div>
             ) : (
-              /* ВК iframe */
               <iframe
                 key={videoKey}
                 src={vkEmbedUrl! + "&autoplay=1"}
@@ -209,6 +297,12 @@ export function LotScreen({ lot, user, onBack, onBid }: {
             <span className={`text-xs font-semibold px-2 py-1 rounded-full ${status.color}`}>{status.label}</span>
             {isActive && <TimerBadge endsAt={lot.endsAt} />}
           </div>
+          {isUpcoming && lot.video && (
+            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5">
+              <Icon name="Lock" size={12} className="text-white" />
+              <span className="text-white text-[11px] font-medium">Видео откроется при старте</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -217,11 +311,27 @@ export function LotScreen({ lot, user, onBack, onBid }: {
           <h2 className="text-[20px] font-bold text-[#1C1C1E] mb-1">{lot.title}</h2>
           <p className="text-sm text-[#767676] leading-relaxed mb-4">{lot.description}</p>
 
+          {/* Таймер до начала для upcoming */}
+          {isUpcoming && lot.startsAt && startsInMs > 0 && (
+            <div className="rounded-2xl p-4 mb-4 flex items-center gap-3" style={{ background: "#EEF5FF", border: "1px solid #C5D9F5" }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: "#2787F5" }}>
+                <Icon name="Clock" size={18} className="text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-[#2787F5]">Аукцион начнётся через</p>
+                <p className="text-[22px] font-bold text-[#1C1C1E] leading-none">{formatTimer(startsInMs)}</p>
+                <p className="text-[11px] text-[#767676] mt-0.5">
+                  {lot.startsAt.toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Price Block */}
           <div className="rounded-2xl p-4 mb-4" style={{ background: "#FAF7F0", border: "1px solid #EDE0C8" }}>
             <div className="flex justify-between items-start mb-3">
               <div>
-                <p className="text-xs text-[#B8A070] mb-0.5">Текущая ставка</p>
+                <p className="text-xs text-[#B8A070] mb-0.5">{isUpcoming ? "Стартовая цена" : "Текущая ставка"}</p>
                 <p className="text-[28px] font-bold leading-none" style={{ color: "#B8922A" }}>{formatPrice(lot.currentPrice)}</p>
               </div>
               <div className="text-right">
@@ -229,7 +339,7 @@ export function LotScreen({ lot, user, onBack, onBid }: {
                 <p className="text-[15px] font-semibold text-[#1C1A16]">+{formatPrice(lot.step)}</p>
               </div>
             </div>
-            {leader && (
+            {leader && !isUpcoming && (
               <div className="flex items-center gap-2 pt-3" style={{ borderTop: "1px solid #EDE0C8" }}>
                 <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-bold" style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}>
                   {leader.userAvatar}
@@ -248,6 +358,15 @@ export function LotScreen({ lot, user, onBack, onBid }: {
               </div>
             )}
           </div>
+
+          {/* Моя автоставка */}
+          {isActive && user.id !== "guest" && lot.myAutoBid && (
+            <div className="rounded-xl p-3 mb-4 flex items-center gap-2" style={{ background: "#EEF5FF", border: "1px solid #C5D9F5" }}>
+              <Icon name="Bot" size={16} className="text-[#2787F5]" />
+              <p className="text-sm text-[#2787F5] flex-1">Автоставка активна до <span className="font-semibold">{formatPrice(lot.myAutoBid.maxAmount)}</span></p>
+              <button onClick={() => setShowAutoBidModal(true)} className="text-[11px] text-[#2787F5] underline">Изменить</button>
+            </div>
+          )}
 
           {lot.antiSnipe && isActive && (
             <div className="flex items-start gap-2 bg-[#FFF8E1] rounded-xl p-3 mb-4">
@@ -309,19 +428,37 @@ export function LotScreen({ lot, user, onBack, onBid }: {
               <p className="text-sm text-[#B8A070]">Чтобы участвовать в аукционе, откройте приложение через ВКонтакте</p>
             </div>
           ) : (
-            <button
-              onClick={() => setShowBidModal(true)}
-              className="w-full text-white rounded-xl py-3.5 font-bold text-[16px] active:opacity-80 transition-opacity"
-              style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)", boxShadow: "0 4px 16px #C9A84C40" }}
-            >
-              Сделать ставку
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowBidModal(true)}
+                className="flex-1 text-white rounded-xl py-3.5 font-bold text-[16px] active:opacity-80 transition-opacity"
+                style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)", boxShadow: "0 4px 16px #C9A84C40" }}
+              >
+                Сделать ставку
+              </button>
+              <button
+                onClick={() => setShowAutoBidModal(true)}
+                title="Автоставка"
+                className={`w-14 rounded-xl flex items-center justify-center transition-colors active:opacity-80 ${lot.myAutoBid ? "bg-[#2787F5] text-white" : "bg-[#EEF5FF] text-[#2787F5]"}`}
+                style={{ border: lot.myAutoBid ? "none" : "1.5px solid #C5D9F5" }}
+              >
+                <Icon name="Bot" size={20} />
+              </button>
+            </div>
           )}
         </div>
       )}
 
       {showBidModal && (
         <BidModal lot={lot} user={user} onClose={() => setShowBidModal(false)} onBid={(amount) => onBid(lot.id, amount)} />
+      )}
+      {showAutoBidModal && (
+        <AutoBidModal
+          lot={lot}
+          user={user}
+          onClose={() => setShowAutoBidModal(false)}
+          onSave={(maxAmount) => onAutoBid(lot.id, maxAmount)}
+        />
       )}
     </div>
   );

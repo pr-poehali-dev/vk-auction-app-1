@@ -2,6 +2,7 @@
 Получение списка лотов и одного лота с историей ставок.
 GET /  — список всех лотов (с последними ставками)
 GET /?id=1 — один лот с полной историей ставок
+GET /?id=1&userId=xxx — один лот + myAutoBid для данного пользователя
 """
 import json
 import os
@@ -22,6 +23,7 @@ def get_conn():
 
 
 def finish_expired_lots(cur):
+    """Завершаем просроченные активные лоты."""
     cur.execute(f"""
         UPDATE {SCHEMA}.lots l
         SET status = 'finished',
@@ -29,6 +31,15 @@ def finish_expired_lots(cur):
             winner_name = (SELECT user_name FROM {SCHEMA}.bids WHERE lot_id = l.id ORDER BY amount DESC, created_at ASC LIMIT 1),
             payment_status = COALESCE(l.payment_status, 'pending')
         WHERE l.status = 'active' AND l.ends_at <= NOW()
+    """)
+
+
+def activate_scheduled_lots(cur):
+    """Активируем лоты с отложенным стартом, если время пришло."""
+    cur.execute(f"""
+        UPDATE {SCHEMA}.lots
+        SET status = 'active', starts_at = starts_at
+        WHERE status = 'upcoming' AND starts_at IS NOT NULL AND starts_at <= NOW()
     """)
 
 
@@ -51,6 +62,7 @@ def row_to_lot(row):
         "createdAt": row[14].isoformat() if row[14] else None,
         "video": row[15] or "",
         "videoDuration": row[16],
+        "startsAt": row[17].isoformat() if row[17] else None,
     }
 
 
@@ -72,18 +84,20 @@ def handler(event: dict, context) -> dict:
 
     params = event.get("queryStringParameters") or {}
     lot_id = params.get("id")
+    user_id = params.get("userId", "")
 
     conn = get_conn()
     cur = conn.cursor()
 
     finish_expired_lots(cur)
+    activate_scheduled_lots(cur)
     conn.commit()
 
     if lot_id:
         cur.execute(f"""
             SELECT id, title, description, image, start_price, current_price, step,
                    ends_at, status, winner_id, winner_name, anti_snipe, anti_snipe_minutes,
-                   payment_status, created_at, COALESCE(video, '') as video, video_duration
+                   payment_status, created_at, COALESCE(video, '') as video, video_duration, starts_at
             FROM {SCHEMA}.lots WHERE id = {int(lot_id)}
         """)
         row = cur.fetchone()
@@ -100,6 +114,18 @@ def handler(event: dict, context) -> dict:
             LIMIT 50
         """)
         lot["bids"] = [row_to_bid(r) for r in cur.fetchall()]
+
+        # Автоставка текущего пользователя
+        if user_id and user_id != "guest":
+            uid = user_id.replace("'", "''")
+            cur.execute(f"""
+                SELECT max_amount, user_id FROM {SCHEMA}.auto_bids
+                WHERE lot_id = {int(lot_id)} AND user_id = '{uid}'
+            """)
+            ab = cur.fetchone()
+            if ab:
+                lot["myAutoBid"] = {"maxAmount": ab[0], "userId": ab[1]}
+
         conn.close()
         return {"statusCode": 200, "headers": CORS, "body": json.dumps(lot)}
 
@@ -107,7 +133,7 @@ def handler(event: dict, context) -> dict:
     cur.execute(f"""
         SELECT l.id, l.title, l.description, l.image, l.start_price, l.current_price, l.step,
                l.ends_at, l.status, l.winner_id, l.winner_name, l.anti_snipe, l.anti_snipe_minutes,
-               l.payment_status, l.created_at, COALESCE(l.video, '') as video, l.video_duration,
+               l.payment_status, l.created_at, COALESCE(l.video, '') as video, l.video_duration, l.starts_at,
                b.user_id as leader_id, b.user_name as leader_name, b.user_avatar as leader_avatar,
                (SELECT COUNT(*) FROM {SCHEMA}.bids WHERE lot_id = l.id) as bid_count
         FROM {SCHEMA}.lots l
@@ -141,11 +167,11 @@ def handler(event: dict, context) -> dict:
 
     lots = []
     for r in rows:
-        lot = row_to_lot(r[:17])
-        lot["leaderId"] = r[17]
-        lot["leaderName"] = r[18]
-        lot["leaderAvatar"] = r[19]
-        lot["bidCount"] = r[20]
+        lot = row_to_lot(r[:18])
+        lot["leaderId"] = r[18]
+        lot["leaderName"] = r[19]
+        lot["leaderAvatar"] = r[20]
+        lot["bidCount"] = r[21]
         lot["bids"] = recent_bids.get(lot["id"], [])
         lots.append(lot)
 
