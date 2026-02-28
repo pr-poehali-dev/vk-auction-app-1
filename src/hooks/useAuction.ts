@@ -114,6 +114,7 @@ export function useAuction() {
         image: data.image,
         video: data.video,
         videoDuration: data.videoDuration,
+        startPrice: data.startPrice,
         step: data.step,
         startsAt: data.startsAt?.toISOString() ?? null,
         endsAt: data.endsAt?.toISOString(),
