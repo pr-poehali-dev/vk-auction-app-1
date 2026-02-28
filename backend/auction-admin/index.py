@@ -162,5 +162,14 @@ def handler(event: dict, context) -> dict:
         conn.close()
         return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True})}
 
+    elif action == "delete":
+        lot_id = int(body.get("lotId", 0))
+        cur.execute(f"DELETE FROM {SCHEMA}.auto_bids WHERE lot_id = {lot_id}")
+        cur.execute(f"DELETE FROM {SCHEMA}.bids WHERE lot_id = {lot_id}")
+        cur.execute(f"DELETE FROM {SCHEMA}.lots WHERE id = {lot_id}")
+        conn.commit()
+        conn.close()
+        return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True})}
+
     conn.close()
     return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "Неизвестное действие"})}

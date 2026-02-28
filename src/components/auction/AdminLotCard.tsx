@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot } from "@/types/auction";
 import { formatPrice } from "@/components/auction/LotScreens";
@@ -12,14 +13,16 @@ const paymentColors: Record<string, string> = {
   cancelled: "bg-[#FFEBEE] text-[#C62828] border-[#EF5350]",
 };
 
-export function AdminLotCard({ lot, expanded, onToggle, onEditLot, onUpdateStatus, onStopLot }: {
+export function AdminLotCard({ lot, expanded, onToggle, onEditLot, onUpdateStatus, onStopLot, onDeleteLot }: {
   lot: Lot;
   expanded: boolean;
   onToggle: () => void;
   onEditLot: (id: string) => void;
   onUpdateStatus: (id: string, status: Lot["paymentStatus"]) => void;
   onStopLot: (id: string) => void;
+  onDeleteLot: (id: string) => void;
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
   return (
     <div className="bg-white border border-[#E8E8E8] rounded-2xl overflow-hidden">
       <div className="flex items-center gap-3 p-3 cursor-pointer" onClick={onToggle}>
@@ -85,10 +88,35 @@ export function AdminLotCard({ lot, expanded, onToggle, onEditLot, onUpdateStatu
             {lot.status === "active" && (
               <button
                 onClick={() => onStopLot(lot.id)}
-                className="flex-1 flex items-center justify-center gap-1.5 bg-[#FFEBEE] rounded-xl py-2 text-sm text-[#C62828] font-medium"
+                className="flex items-center justify-center gap-1.5 bg-[#FFEBEE] rounded-xl py-2 px-3 text-sm text-[#C62828] font-medium"
               >
                 <Icon name="Square" size={14} />
-                Остановить
+                Стоп
+              </button>
+            )}
+            {confirmDelete ? (
+              <div className="flex gap-1">
+                <button
+                  onClick={() => onDeleteLot(lot.id)}
+                  className="flex items-center justify-center gap-1 bg-red-600 rounded-xl py-2 px-3 text-sm text-white font-semibold"
+                >
+                  <Icon name="Trash2" size={14} />
+                  Да
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="flex items-center justify-center rounded-xl py-2 px-3 text-sm text-[#767676] border border-[#E0E0E0] font-medium"
+                >
+                  Нет
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="flex items-center justify-center rounded-xl py-2 px-3 border border-[#E0E0E0] text-[#767676]"
+                title="Удалить лот"
+              >
+                <Icon name="Trash2" size={14} />
               </button>
             )}
           </div>

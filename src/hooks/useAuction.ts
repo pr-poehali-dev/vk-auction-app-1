@@ -146,6 +146,11 @@ export function useAuction() {
     await loadLots();
   }
 
+  async function handleDeleteLot(id: string) {
+    await apiAdmin({ action: "delete", lotId: Number(id) });
+    await loadLots();
+  }
+
   function goLot(id: string) {
     const found = lots.find((l) => l.id === id) || null;
     setActiveLot(found);
@@ -170,6 +175,7 @@ export function useAuction() {
     handleSaveLot,
     handleUpdateStatus,
     handleStopLot,
+    handleDeleteLot,
     loadLots,
   };
 }

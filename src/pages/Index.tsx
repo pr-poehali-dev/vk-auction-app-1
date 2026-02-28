@@ -22,7 +22,7 @@ export function LoadingScreen() {
 }
 
 export function MobileShell() {
-  const { screen, setScreen, lots, activeLot, editingLot, editingLotId, setEditingLotId, loading, user, vkUser, goLot, handleBid, handleAutoBid, handleSaveLot, handleUpdateStatus, handleStopLot, loadLots } = useAuction();
+  const { screen, setScreen, lots, activeLot, editingLot, editingLotId, setEditingLotId, loading, user, vkUser, goLot, handleBid, handleAutoBid, handleSaveLot, handleUpdateStatus, handleStopLot, handleDeleteLot, loadLots } = useAuction();
 
   if (vkUser.isLoading) return <LoadingScreen />;
 
@@ -88,6 +88,7 @@ export function MobileShell() {
                   onNewLot={() => { setEditingLotId("new"); setScreen("admin-lot"); }}
                   onUpdateStatus={handleUpdateStatus}
                   onStopLot={handleStopLot}
+                  onDeleteLot={handleDeleteLot}
                 />
               )}
               {screen === "admin-lot" && (
@@ -108,7 +109,7 @@ export function MobileShell() {
 }
 
 export function DesktopShell() {
-  const { lots, loading, user, vkUser, handleBid, handleAutoBid, handleSaveLot, handleUpdateStatus, handleStopLot } = useAuction();
+  const { lots, loading, user, vkUser, handleBid, handleAutoBid, handleSaveLot, handleUpdateStatus, handleStopLot, handleDeleteLot } = useAuction();
 
   if (vkUser.isLoading) return <LoadingScreen />;
 
@@ -122,6 +123,7 @@ export function DesktopShell() {
       onSaveLot={handleSaveLot}
       onUpdateStatus={handleUpdateStatus}
       onStopLot={handleStopLot}
+      onDeleteLot={handleDeleteLot}
     />
   );
 }

@@ -4,12 +4,13 @@ import type { Lot } from "@/types/auction";
 import { AdminLotCard } from "@/components/auction/AdminLotCard";
 export { AdminLotForm } from "@/components/auction/AdminLotForm";
 
-export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopLot }: {
+export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopLot, onDeleteLot }: {
   lots: Lot[];
   onEditLot: (id: string) => void;
   onNewLot: () => void;
   onUpdateStatus: (id: string, status: Lot["paymentStatus"]) => void;
   onStopLot: (id: string) => void;
+  onDeleteLot: (id: string) => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -72,6 +73,7 @@ export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopL
             onEditLot={onEditLot}
             onUpdateStatus={onUpdateStatus}
             onStopLot={onStopLot}
+            onDeleteLot={onDeleteLot}
           />
         ))}
       </div>

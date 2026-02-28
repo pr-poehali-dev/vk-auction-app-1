@@ -16,6 +16,7 @@ export function DesktopLayout({
   onSaveLot,
   onUpdateStatus,
   onStopLot,
+  onDeleteLot,
 }: {
   lots: Lot[];
   user: User;
@@ -25,6 +26,7 @@ export function DesktopLayout({
   onSaveLot: (data: Partial<Lot>, lotId?: string | null) => Promise<void>;
   onUpdateStatus: (id: string, status: Lot["paymentStatus"]) => Promise<void>;
   onStopLot: (id: string) => Promise<void>;
+  onDeleteLot: (id: string) => Promise<void>;
 }) {
   const [screen, setScreen] = useState<DesktopScreen>("catalog");
   const [editingLotId, setEditingLotId] = useState<string | null | "new">(null);
@@ -123,6 +125,7 @@ export function DesktopLayout({
                   onNewLot={() => { editingLotIdRef.current = "new"; setEditingLotId("new"); setScreen("admin-lot"); }}
                   onUpdateStatus={onUpdateStatus}
                   onStopLot={onStopLot}
+                  onDeleteLot={onDeleteLot}
                 />
               </div>
             )}
