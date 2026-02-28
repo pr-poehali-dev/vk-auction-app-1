@@ -69,10 +69,12 @@ export function LotMedia({ lot, isActive, isUpcoming, onBack }: {
               controls
               autoPlay
               playsInline
+              preload="auto"
               poster={lot.image || undefined}
               onEnded={() => setVideoKey((k) => k + 1)}
+              onError={(e) => console.error("[video] error", e)}
             >
-              <source src={lot.video} />
+              <source src={lot.video} type="video/mp4" />
             </video>
           ) : !videoPlaying ? (
             <div
