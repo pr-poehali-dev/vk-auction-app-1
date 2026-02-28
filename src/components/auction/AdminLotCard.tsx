@@ -36,9 +36,13 @@ export function AdminLotCard({ lot, expanded, onToggle, onEditLot, onUpdateStatu
           <div className="flex items-center gap-2 mt-0.5">
             <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
               lot.status === "active" ? "bg-[#E8F5E9] text-[#2E7D32]" :
-              lot.status === "finished" ? "bg-[#E8E8E8] text-[#767676]" : "bg-[#FFF3E0] text-[#FF6B35]"
+              lot.status === "finished" ? "bg-[#E8E8E8] text-[#767676]" :
+              lot.status === "upcoming" ? "bg-[#EEF5FF] text-[#2787F5]" :
+              "bg-[#FFEBEE] text-[#C62828]"
             }`}>
-              {lot.status === "active" ? "Активен" : lot.status === "finished" ? "Завершён" : "Отменён"}
+              {lot.status === "active" ? "Активен" :
+               lot.status === "finished" ? "Завершён" :
+               lot.status === "upcoming" ? "Скоро" : "Отменён"}
             </span>
             <span className="text-[11px] text-[#767676]">{formatPrice(lot.currentPrice)}</span>
             <span className="text-[11px] text-[#767676]">· {lot.bidCount ?? lot.bids.length} ставок</span>
