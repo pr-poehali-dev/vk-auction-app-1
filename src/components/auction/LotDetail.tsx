@@ -70,8 +70,17 @@ export function LotScreen({ lot, user, onBack, onBid, onAutoBid }: {
       {isActive && (
         <div className="px-4 pb-6 pt-3 border-t border-[#E8E8E8] bg-white shrink-0">
           {user.id === "guest" ? (
-            <div className="rounded-xl p-4 text-center bg-[#F5F0E8]">
+            <div className="rounded-xl p-4 text-center bg-[#F5F0E8] space-y-2">
               <p className="text-sm text-[#B8A070]">Чтобы участвовать в аукционе, откройте приложение через ВКонтакте</p>
+              <a
+                href="https://vk.com/app54464410"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 bg-[#2787F5] text-white rounded-xl px-4 py-2.5 text-sm font-semibold"
+              >
+                <Icon name="ExternalLink" size={15} />
+                Открыть в ВКонтакте
+              </a>
             </div>
           ) : (
             <div className="flex gap-2">
