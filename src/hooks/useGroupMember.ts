@@ -2,7 +2,27 @@ import { useState, useCallback } from "react";
 import bridge from "@vkontakte/vk-bridge";
 
 const GROUP_SCREEN_NAME = "joywood_store";
-// Числовой ID получаем один раз через groups.getById
+const LS_KEY = "jw_subscribed";
+
+function isSubscribedLocally(userId: string): boolean {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_KEY) || "[]") as string[];
+    return saved.includes(userId);
+  } catch {
+    return false;
+  }
+}
+
+function markSubscribedLocally(userId: string) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_KEY) || "[]") as string[];
+    if (!saved.includes(userId)) {
+      saved.push(userId);
+      localStorage.setItem(LS_KEY, JSON.stringify(saved));
+    }
+  } catch (e) { void e; }
+}
+
 let cachedGroupId: number | null = null;
 
 async function getGroupId(): Promise<number> {
@@ -23,18 +43,16 @@ export function useGroupMember(userId: string) {
   const check = useCallback(async (): Promise<boolean> => {
     if (userId === "guest" || userId === "dev") return true;
     if (isMember === true) return true;
+    if (isSubscribedLocally(userId)) return true;
     setLoading(true);
     try {
       const res = await bridge.send("VKWebAppCallAPIMethod", {
         method: "groups.isMember",
-        params: {
-          group_id: GROUP_SCREEN_NAME,
-          user_id: userId,
-          v: "5.131",
-        },
+        params: { group_id: GROUP_SCREEN_NAME, user_id: userId, v: "5.131" },
       }) as Record<string, unknown>;
       const member = Boolean(res.response);
       setIsMember(member);
+      if (member) markSubscribedLocally(userId);
       return member;
     } catch {
       return false;
@@ -48,12 +66,18 @@ export function useGroupMember(userId: string) {
       const groupId = await getGroupId();
       if (!groupId) return false;
       await bridge.send("VKWebAppJoinGroup", { group_id: groupId });
+      markSubscribedLocally(userId);
       setIsMember(true);
       return true;
     } catch {
       return false;
     }
-  }, []);
+  }, [userId]);
 
-  return { isMember, loading, check, join, setIsMember };
+  const markJoined = useCallback(() => {
+    markSubscribedLocally(userId);
+    setIsMember(true);
+  }, [userId]);
+
+  return { isMember, loading, check, join, setIsMember: markJoined };
 }
