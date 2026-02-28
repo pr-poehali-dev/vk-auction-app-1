@@ -127,9 +127,21 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
 
 export function CatalogScreen({ lots, onLot, isAdmin = false }: { lots: Lot[]; onLot: (id: string) => void; isAdmin?: boolean }) {
   const [tab, setTab] = useState<"active" | "finished">("active");
-  const filtered = lots.filter((l) =>
-    tab === "active" ? l.status === "active" || l.status === "upcoming" : l.status === "finished" || l.status === "cancelled"
-  );
+  const filtered = lots
+    .filter((l) => tab === "active" ? l.status === "active" || l.status === "upcoming" : l.status === "finished" || l.status === "cancelled")
+    .sort((a, b) => {
+      if (tab !== "active") return 0;
+      const aActive = a.status === "active";
+      const bActive = b.status === "active";
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+      if (!aActive && !bActive) {
+        const aT = a.startsAt ? a.startsAt.getTime() : Infinity;
+        const bT = b.startsAt ? b.startsAt.getTime() : Infinity;
+        return aT - bT;
+      }
+      return 0;
+    });
 
   return (
     <div className="flex flex-col h-full">

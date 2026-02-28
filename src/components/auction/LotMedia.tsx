@@ -67,7 +67,9 @@ export function LotMedia({ lot, isActive, isUpcoming, onBack }: {
               key={videoKey}
               className="absolute inset-0 w-full h-full bg-black"
               controls
+              autoPlay
               playsInline
+              poster={lot.image || undefined}
               onEnded={() => setVideoKey((k) => k + 1)}
             >
               <source src={lot.video} />

@@ -11,9 +11,21 @@ export function DesktopCatalog({ lots, user, onBid, onAutoBid }: { lots: Lot[]; 
     return first?.id ?? lots[0]?.id ?? null;
   });
 
-  const filtered = lots.filter((l) =>
-    tab === "active" ? l.status === "active" || l.status === "upcoming" : l.status === "finished" || l.status === "cancelled"
-  );
+  const filtered = lots
+    .filter((l) => tab === "active" ? l.status === "active" || l.status === "upcoming" : l.status === "finished" || l.status === "cancelled")
+    .sort((a, b) => {
+      if (tab !== "active") return 0;
+      const aActive = a.status === "active";
+      const bActive = b.status === "active";
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+      if (!aActive && !bActive) {
+        const aT = a.startsAt ? a.startsAt.getTime() : Infinity;
+        const bT = b.startsAt ? b.startsAt.getTime() : Infinity;
+        return aT - bT;
+      }
+      return 0;
+    });
   const selectedLot = lots.find((l) => l.id === selectedId) ?? filtered[0] ?? null;
 
   return (
