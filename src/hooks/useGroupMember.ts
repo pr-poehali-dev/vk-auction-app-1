@@ -37,7 +37,7 @@ export function useGroupMember(userId: string) {
       setIsMember(member);
       return member;
     } catch {
-      return true;
+      return false;
     } finally {
       setLoading(false);
     }
