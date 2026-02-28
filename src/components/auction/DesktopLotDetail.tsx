@@ -77,7 +77,7 @@ export function DesktopLotDetail({
       <div className="shrink-0 relative rounded-2xl overflow-hidden mb-4" style={{ aspectRatio: "16/9", background: "#000" }}>
         {hasVideo ? (
           isS3Video ? (
-            <video className="w-full h-full object-cover" controls={!isUpcoming} playsInline preload="auto" style={{ filter: isUpcoming ? "blur(12px) brightness(0.5)" : "none", transform: isUpcoming ? "scale(1.08)" : "none" }}>
+            <video className="w-full h-full object-cover" controls={!isUpcoming} playsInline preload="metadata" style={{ filter: isUpcoming ? "blur(12px) brightness(0.5)" : "none", transform: isUpcoming ? "scale(1.08)" : "none" }}>
               <source src={lot.video!} type="video/mp4" />
             </video>
           ) : (

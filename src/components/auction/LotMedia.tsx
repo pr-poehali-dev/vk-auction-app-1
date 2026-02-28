@@ -4,6 +4,42 @@ import type { Lot } from "@/types/auction";
 import { getStatusLabel } from "@/components/auction/lotUtils";
 import { TimerBadge } from "@/components/auction/LotCard";
 
+function VideoPlayer({ src, poster, onEnded }: { src: string; poster?: string; onEnded?: () => void }) {
+  const [error, setError] = useState(false);
+
+  if (error) {
+    return (
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black">
+        <img src={poster} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+        <a
+          href={src}
+          target="_blank"
+          rel="noreferrer"
+          className="relative z-10 flex items-center gap-2 bg-white/90 rounded-xl px-4 py-3 font-semibold text-[14px] text-[#1C1A16]"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Смотреть видео
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <video
+      className="absolute inset-0 w-full h-full bg-black"
+      controls
+      autoPlay
+      playsInline
+      preload="metadata"
+      poster={poster}
+      onEnded={onEnded}
+      onError={() => setError(true)}
+    >
+      <source src={src} type="video/mp4" />
+    </video>
+  );
+}
+
 export function parseVKVideoEmbed(url: string): string | null {
   if (!url) return null;
   const iframeSrc = url.match(/src=["']([^"']+)["']/);
@@ -63,19 +99,8 @@ export function LotMedia({ lot, isActive, isUpcoming, onBack }: {
         </div>
         <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
           {isS3Video ? (
-            <video
-              key={videoKey}
-              className="absolute inset-0 w-full h-full bg-black"
-              controls
-              autoPlay
-              playsInline
-              preload="auto"
-              poster={lot.image || undefined}
-              onEnded={() => setVideoKey((k) => k + 1)}
-              onError={(e) => console.error("[video] error", e)}
-            >
-              <source src={lot.video} type="video/mp4" />
-            </video>
+            <VideoPlayer key={videoKey} src={lot.video!} poster={lot.image} onEnded={() => setVideoKey((k) => k + 1)} />
+
           ) : !videoPlaying ? (
             <div
               className="absolute inset-0 flex items-center justify-center cursor-pointer"
