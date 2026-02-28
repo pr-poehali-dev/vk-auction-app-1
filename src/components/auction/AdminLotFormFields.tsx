@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
 
 const UPLOAD_URL = "https://functions.poehali.dev/c53d103f-d602-4252-9f2f-8368eccdee4e";
@@ -45,6 +45,56 @@ export function AdminLotFormFields({ form, set, isNew, videoUploading, uploadPro
   fileInputRef: React.RefObject<HTMLInputElement>;
 }) {
   const hasDelayedStart = Boolean(form.startsAt);
+  const [thumbLoading, setThumbLoading] = useState(false);
+
+  async function handleExtractThumb() {
+    const videoUrl = form.video || videoUrlRef.current;
+    if (!videoUrl?.startsWith("https://cdn.poehali.dev")) return;
+    setThumbLoading(true);
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const video = document.createElement("video");
+        video.crossOrigin = "anonymous";
+        video.preload = "metadata";
+        video.muted = true;
+        video.playsInline = true;
+        video.src = videoUrl;
+        video.currentTime = 1;
+        video.addEventListener("seeked", async () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = video.videoWidth || 640;
+          canvas.height = video.videoHeight || 360;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { reject(new Error("no ctx")); return; }
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(async (blob) => {
+            if (!blob) { reject(new Error("no blob")); return; }
+            const toBase64 = (b: Blob): Promise<string> =>
+              new Promise((res, rej) => {
+                const r = new FileReader();
+                r.onload = () => res((r.result as string).split(",")[1]);
+                r.onerror = rej;
+                r.readAsDataURL(b);
+              });
+            const data = await toBase64(blob);
+            const thumbName = videoUrl.split("/").pop()?.replace(/\.[^.]+$/, "") + "_thumb.jpg";
+            const resp = await fetch(UPLOAD_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "upload_image", filename: thumbName, contentType: "image/jpeg", data }),
+            });
+            const { url: thumbUrl } = await resp.json();
+            if (thumbUrl) set("image", thumbUrl);
+            resolve();
+          }, "image/jpeg", 0.85);
+        }, { once: true });
+        video.addEventListener("error", () => reject(new Error("video error")), { once: true });
+      });
+    } catch (e) {
+      alert("Не удалось извлечь кадр: " + String(e));
+    }
+    setThumbLoading(false);
+  }
 
   async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -202,6 +252,16 @@ export function AdminLotFormFields({ form, set, isNew, videoUploading, uploadPro
             placeholder="https://example.com/photo.jpg"
             className="flex-1 border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-[14px] outline-none focus:border-[#2787F5] bg-white min-w-0"
           />
+          {(form.video || videoUrlRef.current)?.startsWith("https://cdn.poehali.dev") && (
+            <button
+              onClick={handleExtractThumb}
+              disabled={thumbLoading}
+              title="Взять кадр из видео"
+              className="shrink-0 w-11 h-11 rounded-xl border border-[#E0E0E0] bg-white flex items-center justify-center text-[#C9A84C] active:opacity-70 disabled:opacity-40"
+            >
+              <Icon name={thumbLoading ? "Loader" : "Clapperboard"} size={18} className={thumbLoading ? "animate-spin" : ""} />
+            </button>
+          )}
           <button
             onClick={() => imageInputRef.current?.click()}
             disabled={imageUploading}
