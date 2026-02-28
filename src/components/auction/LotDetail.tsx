@@ -3,6 +3,8 @@ import Icon from "@/components/ui/icon";
 import type { Lot, User, Screen } from "@/types/auction";
 import { formatPrice, formatTime, formatTimer, getStatusLabel, useTimer, useCountdown, firstName, vkProfileUrl } from "@/components/auction/lotUtils";
 import { TimerBadge } from "@/components/auction/LotCard";
+import { useGroupMember } from "@/hooks/useGroupMember";
+import { SubscribeModal } from "@/components/auction/SubscribeModal";
 
 // ─── VK Video Player ──────────────────────────────────────────────────────────
 export function parseVKVideoEmbed(url: string): string | null {
@@ -206,9 +208,12 @@ export function LotScreen({ lot, user, onBack, onBid, onAutoBid }: {
   const isAdmin = user.isAdmin;
   const [showBidModal, setShowBidModal] = useState(false);
   const [showAutoBidModal, setShowAutoBidModal] = useState(false);
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"bid" | "autobid" | null>(null);
   const [videoKey, setVideoKey] = useState(0);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { check: checkMember, setIsMember } = useGroupMember(user.id);
   const ms = useTimer(lot.endsAt);
   const startsInMs = useCountdown(lot.startsAt);
   const isActive = lot.status === "active" && ms > 0;
@@ -218,6 +223,22 @@ export function LotScreen({ lot, user, onBack, onBid, onAutoBid }: {
   const vkEmbedUrl = lot.video ? parseVKVideoEmbed(lot.video) : null;
   const isS3Video = Boolean(lot.video && lot.video.startsWith("https://cdn.poehali.dev"));
   const hasVideo = !isUpcoming && Boolean(lot.video && (vkEmbedUrl || isS3Video));
+
+  async function requireMember(action: "bid" | "autobid") {
+    if (user.isAdmin) {
+      if (action === "bid") setShowBidModal(true);
+      else setShowAutoBidModal(true);
+      return;
+    }
+    const ok = await checkMember();
+    if (ok) {
+      if (action === "bid") setShowBidModal(true);
+      else setShowAutoBidModal(true);
+    } else {
+      setPendingAction(action);
+      setShowSubscribeModal(true);
+    }
+  }
 
   function handlePlay() { setVideoPlaying(true); }
 
@@ -430,14 +451,14 @@ export function LotScreen({ lot, user, onBack, onBid, onAutoBid }: {
           ) : (
             <div className="flex gap-2">
               <button
-                onClick={() => setShowBidModal(true)}
+                onClick={() => requireMember("bid")}
                 className="flex-1 text-white rounded-xl py-3.5 font-bold text-[16px] active:opacity-80 transition-opacity"
                 style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)", boxShadow: "0 4px 16px #C9A84C40" }}
               >
                 Сделать ставку
               </button>
               <button
-                onClick={() => setShowAutoBidModal(true)}
+                onClick={() => requireMember("autobid")}
                 title="Автоставка"
                 className={`w-14 rounded-xl flex items-center justify-center transition-colors active:opacity-80 ${lot.myAutoBid ? "bg-[#2787F5] text-white" : "bg-[#EEF5FF] text-[#2787F5]"}`}
                 style={{ border: lot.myAutoBid ? "none" : "1.5px solid #C5D9F5" }}
@@ -449,6 +470,18 @@ export function LotScreen({ lot, user, onBack, onBid, onAutoBid }: {
         </div>
       )}
 
+      {showSubscribeModal && (
+        <SubscribeModal
+          onClose={() => setShowSubscribeModal(false)}
+          onJoined={() => {
+            setIsMember(true);
+            setShowSubscribeModal(false);
+            if (pendingAction === "bid") setShowBidModal(true);
+            else if (pendingAction === "autobid") setShowAutoBidModal(true);
+            setPendingAction(null);
+          }}
+        />
+      )}
       {showBidModal && (
         <BidModal lot={lot} user={user} onClose={() => setShowBidModal(false)} onBid={(amount) => onBid(lot.id, amount)} />
       )}

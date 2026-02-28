@@ -4,6 +4,8 @@ import type { Lot, User } from "@/types/auction";
 import { formatPrice, formatTime, formatTimer, getStatusLabel, useTimer, useCountdown, firstName, vkProfileUrl } from "@/components/auction/lotUtils";
 import { parseVKVideoEmbed, AutoBidModal } from "@/components/auction/LotDetail";
 import { DesktopTimerBadge } from "@/components/auction/DesktopLotCard";
+import { useGroupMember } from "@/hooks/useGroupMember";
+import { SubscribeModal } from "@/components/auction/SubscribeModal";
 
 export function DesktopLotDetail({
   lot,
@@ -20,6 +22,8 @@ export function DesktopLotDetail({
   const [bidResult, setBidResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [bidLoading, setBidLoading] = useState(false);
   const [showAutoBidModal, setShowAutoBidModal] = useState(false);
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+  const { check: checkMember, setIsMember } = useGroupMember(user.id);
   const ms = useTimer(lot.endsAt);
   const startsInMs = useCountdown(lot.startsAt);
   const isActive = lot.status === "active" && ms > 0;
@@ -33,6 +37,10 @@ export function DesktopLotDetail({
   const hasVideo = !isUpcoming && Boolean(lot.video && (vkEmbedUrl || isS3Video));
 
   async function handleBid(amount: number) {
+    if (!user.isAdmin) {
+      const ok = await checkMember();
+      if (!ok) { setShowSubscribeModal(true); return; }
+    }
     setBidLoading(true);
     setBidResult(null);
     const res = await onBid(lot.id, amount);
@@ -208,6 +216,13 @@ export function DesktopLotDetail({
           user={user}
           onClose={() => setShowAutoBidModal(false)}
           onSave={(maxAmount) => onAutoBid(lot.id, maxAmount)}
+        />
+      )}
+
+      {showSubscribeModal && (
+        <SubscribeModal
+          onClose={() => setShowSubscribeModal(false)}
+          onJoined={() => { setIsMember(true); setShowSubscribeModal(false); }}
         />
       )}
 
