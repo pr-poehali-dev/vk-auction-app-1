@@ -131,7 +131,7 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
   );
 }
 
-export function CatalogScreen({ lots, onLot, isAdmin = false }: { lots: Lot[]; onLot: (id: string) => void; isAdmin?: boolean }) {
+export function CatalogScreen({ lots, onLot, isAdmin = false, isGuest = false }: { lots: Lot[]; onLot: (id: string) => void; isAdmin?: boolean; isGuest?: boolean }) {
   const [tab, setTab] = useState<"active" | "finished">("active");
   const filtered = lots
     .filter((l) => tab === "active" ? l.status === "active" || l.status === "upcoming" : l.status === "finished" || l.status === "cancelled")
@@ -168,6 +168,22 @@ export function CatalogScreen({ lots, onLot, isAdmin = false }: { lots: Lot[]; o
           ))}
         </div>
       </div>
+      {isGuest && (
+        <div className="mx-4 mt-3 rounded-xl p-3.5 flex items-center gap-3" style={{ background: "#EEF5FF", border: "1px solid #C5D9F5" }}>
+          <Icon name="LogIn" size={20} className="text-[#2787F5] shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] text-[#1C1A16] font-medium leading-snug">Войдите через ВКонтакте, чтобы делать ставки</p>
+          </div>
+          <a
+            href="https://vk.com/app54464410"
+            target="_blank"
+            rel="noreferrer"
+            className="shrink-0 bg-[#2787F5] text-white rounded-lg px-3 py-1.5 text-[12px] font-semibold whitespace-nowrap"
+          >
+            Войти
+          </a>
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto px-4 pb-4 bg-[#F7F4EF]">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-[#C5B89A]">

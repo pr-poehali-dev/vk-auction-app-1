@@ -63,7 +63,7 @@ export function MobileShell() {
             </div>
           ) : (
             <>
-              {screen === "catalog" && <CatalogScreen lots={lots} onLot={goLot} isAdmin={user.isAdmin} />}
+              {screen === "catalog" && <CatalogScreen lots={lots} onLot={goLot} isAdmin={user.isAdmin} isGuest={user.id === "guest"} />}
               {screen === "lot" && activeLot && (
                 <LotScreen
                   key={activeLot.id}
