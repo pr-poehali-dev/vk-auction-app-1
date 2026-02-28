@@ -52,21 +52,26 @@ export function AdminLotFormFields({ form, set, isNew, videoUploading, uploadPro
     if (!videoUrl?.startsWith("https://cdn.poehali.dev")) return;
     setThumbLoading(true);
     try {
+      // Скачиваем только первые 5MB видео чтобы обойти CORS canvas
+      const rangeResp = await fetch(videoUrl, { headers: { Range: "bytes=0-5242880" } });
+      const videoBlob = await rangeResp.blob();
+      const blobUrl = URL.createObjectURL(videoBlob);
+
       await new Promise<void>((resolve, reject) => {
         const video = document.createElement("video");
-        video.crossOrigin = "anonymous";
         video.preload = "metadata";
         video.muted = true;
         video.playsInline = true;
-        video.src = videoUrl;
+        video.src = blobUrl;
         video.currentTime = 1;
         video.addEventListener("seeked", async () => {
           const canvas = document.createElement("canvas");
           canvas.width = video.videoWidth || 640;
           canvas.height = video.videoHeight || 360;
           const ctx = canvas.getContext("2d");
-          if (!ctx) { reject(new Error("no ctx")); return; }
+          if (!ctx) { URL.revokeObjectURL(blobUrl); reject(new Error("no ctx")); return; }
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(blobUrl);
           canvas.toBlob(async (blob) => {
             if (!blob) { reject(new Error("no blob")); return; }
             const toBase64 = (b: Blob): Promise<string> =>
@@ -88,7 +93,7 @@ export function AdminLotFormFields({ form, set, isNew, videoUploading, uploadPro
             resolve();
           }, "image/jpeg", 0.85);
         }, { once: true });
-        video.addEventListener("error", () => reject(new Error("video error")), { once: true });
+        video.addEventListener("error", () => { URL.revokeObjectURL(blobUrl); reject(new Error("video load error")); }, { once: true });
       });
     } catch (e) {
       alert("Не удалось извлечь кадр: " + String(e));
