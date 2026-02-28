@@ -6,6 +6,9 @@ GET /  — получить статистику (только для админ
 import json
 import os
 import psycopg2
+from datetime import datetime, timezone, timedelta
+
+MSK = timezone(timedelta(hours=3))
 
 SCHEMA = "t_p68201414_vk_auction_app_1"
 HARDCODED_ADMINS = {"32129039", "100411622"}
@@ -31,13 +34,14 @@ def handler(event: dict, context) -> dict:
         if not vk_user_id:
             return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "vkUserId required"})}
 
+        today_msk = datetime.now(MSK).date()
         cur.execute(
             f"""
-            INSERT INTO {SCHEMA}.visits (vk_user_id, user_name)
-            VALUES (%s, %s)
-            ON CONFLICT (vk_user_id, CAST(visited_at AS DATE)) DO NOTHING
+            INSERT INTO {SCHEMA}.visits (vk_user_id, user_name, visit_date)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (vk_user_id, visit_date) DO NOTHING
             """,
-            (vk_user_id, user_name),
+            (vk_user_id, user_name, today_msk),
         )
         conn.commit()
         cur.close()
@@ -53,11 +57,10 @@ def handler(event: dict, context) -> dict:
         cur.execute(f"SELECT COUNT(DISTINCT vk_user_id) FROM {SCHEMA}.visits")
         total_unique = cur.fetchone()[0]
 
+        today_msk = datetime.now(MSK).date()
         cur.execute(
-            f"""
-            SELECT COUNT(DISTINCT vk_user_id) FROM {SCHEMA}.visits
-            WHERE visited_at >= NOW() - INTERVAL '24 hours'
-            """
+            f"SELECT COUNT(DISTINCT vk_user_id) FROM {SCHEMA}.visits WHERE visit_date = %s",
+            (today_msk,),
         )
         today_unique = cur.fetchone()[0]
 
