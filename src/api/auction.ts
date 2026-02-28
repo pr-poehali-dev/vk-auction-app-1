@@ -61,25 +61,35 @@ function normalizeBid(b: ApiResponse): Bid {
   };
 }
 
+const VALID_STATUSES = new Set(["active", "finished", "upcoming", "cancelled"]);
+
+function safeDate(val: unknown, fallback: Date = new Date(0)): Date {
+  if (!val) return fallback;
+  const d = new Date(String(val));
+  return isNaN(d.getTime()) ? fallback : d;
+}
+
 export function normalizeLot(r: ApiResponse): Lot {
   const bidsRaw = r.bids as ApiResponse[] | undefined;
   const startsAtRaw = r.startsAt ?? r.starts_at;
   const myAutoBidRaw = r.myAutoBid as ApiResponse | undefined;
+  const videoDurationRaw = r.videoDuration ?? r.video_duration;
+  const rawStatus = String(r.status ?? "");
   return {
     id: String(r.id),
     title: String(r.title ?? ""),
     description: String(r.description ?? ""),
     image: String(r.image ?? ""),
-    video: String(r.video ?? ""),
-    videoDuration: r.videoDuration ?? r.video_duration ? Number(r.videoDuration ?? r.video_duration) : undefined,
+    video: r.video ? String(r.video) : "",
+    videoDuration: videoDurationRaw != null ? Number(videoDurationRaw) : undefined,
     startPrice: Number(r.startPrice ?? r.start_price ?? 0),
     currentPrice: Number(r.currentPrice ?? r.current_price ?? 0),
     step: Number(r.step ?? 100),
-    startsAt: startsAtRaw ? new Date(String(startsAtRaw)) : undefined,
-    endsAt: new Date(String(r.endsAt ?? r.ends_at ?? "")),
-    status: (r.status as Lot["status"]) ?? "active",
-    winnerId: r.winnerId as string | undefined ?? r.winner_id as string | undefined,
-    winnerName: r.winnerName as string | undefined ?? r.winner_name as string | undefined,
+    startsAt: startsAtRaw ? safeDate(startsAtRaw) : undefined,
+    endsAt: safeDate(r.endsAt ?? r.ends_at, new Date(0)),
+    status: (VALID_STATUSES.has(rawStatus) ? rawStatus : "active") as Lot["status"],
+    winnerId: (r.winnerId ?? r.winner_id) as string | undefined,
+    winnerName: (r.winnerName ?? r.winner_name) as string | undefined,
     antiSnipe: Boolean(r.antiSnipe ?? r.anti_snipe ?? false),
     antiSnipeMinutes: Number(r.antiSnipeMinutes ?? r.anti_snipe_minutes ?? 2),
     paymentStatus: (r.paymentStatus ?? r.payment_status) as Lot["paymentStatus"],

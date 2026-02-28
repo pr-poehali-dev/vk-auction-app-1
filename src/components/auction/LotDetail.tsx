@@ -23,6 +23,7 @@ export function LotScreen({ lot, user, onBack, onBid, onAutoBid }: {
   const [showAutoBidModal, setShowAutoBidModal] = useState(false);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<"bid" | "autobid" | null>(null);
+  const [checkingMember, setCheckingMember] = useState(false);
   const { check: checkMember, setIsMember } = useGroupMember(user.id);
   const ms = useTimer(lot.endsAt);
   const startsInMs = useCountdown(lot.startsAt);
@@ -30,18 +31,24 @@ export function LotScreen({ lot, user, onBack, onBid, onAutoBid }: {
   const isUpcoming = lot.status === "upcoming";
 
   async function requireMember(action: "bid" | "autobid") {
+    if (checkingMember) return;
     if (user.isAdmin) {
       if (action === "bid") setShowBidModal(true);
       else setShowAutoBidModal(true);
       return;
     }
-    const ok = await checkMember();
-    if (ok) {
-      if (action === "bid") setShowBidModal(true);
-      else setShowAutoBidModal(true);
-    } else {
-      setPendingAction(action);
-      setShowSubscribeModal(true);
+    setCheckingMember(true);
+    try {
+      const ok = await checkMember();
+      if (ok) {
+        if (action === "bid") setShowBidModal(true);
+        else setShowAutoBidModal(true);
+      } else {
+        setPendingAction(action);
+        setShowSubscribeModal(true);
+      }
+    } finally {
+      setCheckingMember(false);
     }
   }
 
@@ -70,15 +77,17 @@ export function LotScreen({ lot, user, onBack, onBid, onAutoBid }: {
             <div className="flex gap-2">
               <button
                 onClick={() => requireMember("bid")}
-                className="flex-1 text-white rounded-xl py-3.5 font-bold text-[16px] active:opacity-80 transition-opacity"
+                disabled={checkingMember}
+                className="flex-1 text-white rounded-xl py-3.5 font-bold text-[16px] active:opacity-80 transition-opacity disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)", boxShadow: "0 4px 16px #C9A84C40" }}
               >
-                Сделать ставку
+                {checkingMember ? "…" : "Сделать ставку"}
               </button>
               <button
                 onClick={() => requireMember("autobid")}
+                disabled={checkingMember}
                 title="Автоставка"
-                className={`w-14 rounded-xl flex items-center justify-center transition-colors active:opacity-80 ${lot.myAutoBid ? "bg-[#2787F5] text-white" : "bg-[#EEF5FF] text-[#2787F5]"}`}
+                className={`w-14 rounded-xl flex items-center justify-center transition-colors active:opacity-80 disabled:opacity-60 ${lot.myAutoBid ? "bg-[#2787F5] text-white" : "bg-[#EEF5FF] text-[#2787F5]"}`}
                 style={{ border: lot.myAutoBid ? "none" : "1.5px solid #C5D9F5" }}
               >
                 <Icon name="Bot" size={20} />

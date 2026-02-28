@@ -37,20 +37,24 @@ export function DesktopLotDetail({
   const hasVideo = !isUpcoming && Boolean(lot.video && (vkEmbedUrl || isS3Video));
 
   async function handleBid(amount: number) {
-    if (!user.isAdmin) {
-      const ok = await checkMember();
-      if (!ok) { setShowSubscribeModal(true); return; }
-    }
+    if (bidLoading) return;
     setBidLoading(true);
     setBidResult(null);
-    const res = await onBid(lot.id, amount);
-    if (res === "ok") {
-      setBidResult({ type: "success", text: `Ставка ${formatPrice(amount)} принята!` });
-      setCustomAmount("");
-    } else {
-      setBidResult({ type: "error", text: res });
+    try {
+      if (!user.isAdmin) {
+        const ok = await checkMember();
+        if (!ok) { setShowSubscribeModal(true); return; }
+      }
+      const res = await onBid(lot.id, amount);
+      if (res === "ok") {
+        setBidResult({ type: "success", text: `Ставка ${formatPrice(amount)} принята!` });
+        setCustomAmount("");
+      } else {
+        setBidResult({ type: "error", text: res });
+      }
+    } finally {
+      setBidLoading(false);
     }
-    setBidLoading(false);
   }
 
   return (

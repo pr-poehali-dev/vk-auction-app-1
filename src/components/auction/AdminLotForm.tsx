@@ -42,8 +42,12 @@ export function AdminLotForm({ lot, onBack, onCancel, onSave }: {
   }
 
   async function handleSave() {
-    if (!form.title) { alert("Введите название лота"); return; }
+    if (!form.title.trim()) { alert("Введите название лота"); return; }
     if (!form.endsAt) { alert("Выберите дату и время окончания"); return; }
+    if (new Date(form.endsAt) <= new Date()) { alert("Дата окончания должна быть в будущем"); return; }
+    if (form.startsAt && new Date(form.startsAt) >= new Date(form.endsAt)) { alert("Дата начала должна быть раньше даты окончания"); return; }
+    if (!form.startPrice || Number(form.startPrice) <= 0) { alert("Укажите стартовую цену больше 0"); return; }
+    if (!form.step || Number(form.step) <= 0) { alert("Укажите шаг аукциона больше 0"); return; }
     setSaving(true);
     try {
       await onSave({
