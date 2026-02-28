@@ -21,10 +21,10 @@ function VisitorsModal({ data, onClose }: { data: VisitorsData; onClose: () => v
           <button onClick={onClose} className="text-[#767676]"><Icon name="X" size={18} /></button>
         </div>
         <div className="divide-y divide-[#F0EDE8]">
-          {data.recent.length === 0 && (
+          {(data.recent ?? []).length === 0 && (
             <p className="text-center text-sm text-[#767676] py-6">Нет данных</p>
           )}
-          {data.recent.map((v, i) => {
+          {(data.recent ?? []).map((v, i) => {
             const initials = v.userName.split(" ").map((w) => w[0]).filter(Boolean).slice(0, 2).join("");
             const date = new Date(v.visitedAt);
             const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
