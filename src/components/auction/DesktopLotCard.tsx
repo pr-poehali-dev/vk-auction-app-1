@@ -16,6 +16,7 @@ export function DesktopTimerBadge({ endsAt }: { endsAt: Date }) {
 export function DesktopLotCard({ lot, onClick, isActive: isSelected, isAdmin = false }: { lot: Lot; onClick: () => void; isActive: boolean; isAdmin?: boolean }) {
   const status = getStatusLabel(lot);
   const leaderName = lot.leaderName ?? lot.bids[0]?.userName;
+  const isUpcoming = lot.status === "upcoming";
 
 
   return (
@@ -34,6 +35,7 @@ export function DesktopLotCard({ lot, onClick, isActive: isSelected, isAdmin = f
           <video
             src={lot.video + "#t=0.5"}
             className="w-full h-full object-cover"
+            style={{ filter: isUpcoming ? "blur(8px) brightness(0.6)" : "none", transform: isUpcoming ? "scale(1.08)" : "none" }}
             preload="metadata"
             muted
             playsInline
@@ -43,6 +45,7 @@ export function DesktopLotCard({ lot, onClick, isActive: isSelected, isAdmin = f
             src={lot.image || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80"}
             alt={lot.title}
             className="w-full h-full object-cover"
+            style={{ filter: isUpcoming ? "blur(8px) brightness(0.6)" : "none", transform: isUpcoming ? "scale(1.08)" : "none" }}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />

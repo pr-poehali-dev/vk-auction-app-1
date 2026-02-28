@@ -93,8 +93,15 @@ export function useVKUser(): VKUser {
 
         const screenName = (userInfo as Record<string, unknown>).screen_name as string | undefined;
 
+        const vkId = String(userInfo.id);
+        fetch("https://functions.poehali.dev/e8bd7a1d-ec16-415b-ade0-2d0e35b9ba7e", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vkUserId: vkId, userName: name }),
+        }).catch(() => {});
+
         setUser({
-          id: String(userInfo.id),
+          id: vkId,
           screenName: screenName || `id${userInfo.id}`,
           name,
           avatar: initials || "В",

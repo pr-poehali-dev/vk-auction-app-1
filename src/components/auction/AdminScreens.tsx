@@ -1,18 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import type { Lot } from "@/types/auction";
 import { AdminLotCard } from "@/components/auction/AdminLotCard";
 export { AdminLotForm } from "@/components/auction/AdminLotForm";
 
-export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopLot, onDeleteLot }: {
+const TRACK_URL = "https://functions.poehali.dev/e8bd7a1d-ec16-415b-ade0-2d0e35b9ba7e";
+
+export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopLot, onDeleteLot, adminId }: {
   lots: Lot[];
   onEditLot: (id: string) => void;
   onNewLot: () => void;
   onUpdateStatus: (id: string, status: Lot["paymentStatus"]) => void;
   onStopLot: (id: string) => void;
   onDeleteLot: (id: string) => void;
+  adminId?: string;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [visitors, setVisitors] = useState<{ totalUnique: number; todayUnique: number } | null>(null);
+
+  useEffect(() => {
+    if (!adminId) return;
+    fetch(`${TRACK_URL}?requesterId=${adminId}`)
+      .then((r) => r.json())
+      .then((d) => {
+        const parsed = typeof d === "string" ? JSON.parse(d) : d;
+        setVisitors(parsed);
+      })
+      .catch(() => {});
+  }, [adminId]);
 
   function downloadCSV() {
     const rows = [["Лот", "Победитель", "Цена", "Статус оплаты"]];
@@ -53,6 +68,20 @@ export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopL
             </div>
           ))}
         </div>
+
+        {/* Visitors */}
+        {visitors && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-white border border-[#E8E8E8] rounded-xl p-3 text-center">
+              <p className="text-[20px] font-bold text-[#C9A84C]">{visitors.totalUnique}</p>
+              <p className="text-[10px] text-[#767676] leading-tight mt-0.5">Уникальных за всё время</p>
+            </div>
+            <div className="bg-white border border-[#E8E8E8] rounded-xl p-3 text-center">
+              <p className="text-[20px] font-bold text-[#C9A84C]">{visitors.todayUnique}</p>
+              <p className="text-[10px] text-[#767676] leading-tight mt-0.5">За последние 24 часа</p>
+            </div>
+          </div>
+        )}
 
         {/* Export */}
         <button

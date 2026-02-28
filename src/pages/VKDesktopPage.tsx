@@ -98,6 +98,7 @@ export default function VKDesktopPage() {
                   onNewLot={() => { setEditingLotId("new"); setScreen("admin-lot"); }}
                   onUpdateStatus={handleUpdateStatus}
                   onStopLot={handleStopLot}
+                  adminId={user.numericId}
                 />
               </div>
             )}

@@ -89,6 +89,7 @@ export function MobileShell() {
                   onUpdateStatus={handleUpdateStatus}
                   onStopLot={handleStopLot}
                   onDeleteLot={handleDeleteLot}
+                  adminId={user.numericId}
                 />
               )}
               {screen === "admin-lot" && (
