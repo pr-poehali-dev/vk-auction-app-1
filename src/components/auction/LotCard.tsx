@@ -38,18 +38,14 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
       style={{ boxShadow: "0 1px 8px #C9A84C18, 0 0 0 1px #EDE0C8" }}
     >
       <div className="relative overflow-hidden">
-        {lot.video?.startsWith("https://cdn.poehali.dev") ? (
+        {!isUpcoming && lot.video?.startsWith("https://cdn.poehali.dev") ? (
           <video
             src={lot.video + "#t=0.5"}
             className="w-full h-44 object-cover"
             preload="metadata"
             muted
             playsInline
-            style={{
-              animation: lot.status === "active" ? "kenBurns 8s ease-in-out infinite alternate" : "none",
-              filter: isUpcoming ? "blur(6px) brightness(0.7)" : "none",
-              transform: isUpcoming ? "scale(1.05)" : "none",
-            }}
+            style={{ animation: lot.status === "active" ? "kenBurns 8s ease-in-out infinite alternate" : "none" }}
           />
         ) : (
           <img
@@ -58,8 +54,8 @@ export function LotCard({ lot, onClick, isAdmin = false }: { lot: Lot; onClick: 
             className="w-full h-44 object-cover"
             style={{
               animation: lot.status === "active" ? "kenBurns 8s ease-in-out infinite alternate" : "none",
-              filter: isUpcoming && lot.video ? "blur(6px) brightness(0.7)" : "none",
-              transform: isUpcoming && lot.video ? "scale(1.05)" : "none",
+              filter: isUpcoming && lot.video ? "blur(8px) brightness(0.6)" : "none",
+              transform: isUpcoming && lot.video ? "scale(1.08)" : "none",
             }}
           />
         )}
