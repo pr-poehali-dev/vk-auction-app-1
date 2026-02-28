@@ -112,6 +112,10 @@ def handler(event: dict, context) -> dict:
         if "video" in body:
             v = body["video"].replace("'", "''")
             fields.append(f"video = '{v}'")
+        if "startPrice" in body:
+            sp = int(body["startPrice"])
+            fields.append(f"start_price = {sp}")
+            fields.append(f"current_price = {sp}")
         if "step" in body:
             fields.append(f"step = {int(body['step'])}")
         if "startsAt" in body:
