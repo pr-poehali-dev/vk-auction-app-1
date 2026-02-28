@@ -77,7 +77,7 @@ export function DesktopLotDetail({
       <div className="shrink-0 relative rounded-2xl overflow-hidden mb-4" style={{ aspectRatio: "16/9", background: "#000" }}>
         {hasVideo ? (
           isS3Video ? (
-            <video className="w-full h-full object-cover" controls playsInline>
+            <video className="w-full h-full object-cover" controls={!isUpcoming} playsInline style={{ filter: isUpcoming ? "blur(12px) brightness(0.5)" : "none", transform: isUpcoming ? "scale(1.08)" : "none" }}>
               <source src={lot.video!} />
             </video>
           ) : (
@@ -87,10 +87,17 @@ export function DesktopLotDetail({
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
               frameBorder="0"
+              style={{ filter: isUpcoming ? "blur(12px) brightness(0.5)" : "none" }}
             />
           )
         ) : (
-          <img src={lot.image} alt={lot.title} className="w-full h-full object-cover" />
+          <img src={lot.image} alt={lot.title} className="w-full h-full object-cover" style={{ filter: isUpcoming ? "blur(12px) brightness(0.5)" : "none", transform: isUpcoming ? "scale(1.08)" : "none" }} />
+        )}
+        {isUpcoming && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
+            <Icon name="Lock" size={32} className="text-white opacity-80" />
+            <p className="text-white text-sm font-semibold opacity-80">Скоро</p>
+          </div>
         )}
         <div className="absolute top-3 right-3 flex gap-1.5 z-10">
           <span className={`text-xs font-semibold px-2 py-1 rounded-full ${status.color}`}>{status.label}</span>
