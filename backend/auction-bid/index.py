@@ -71,51 +71,53 @@ def place_bid_internal(cur, lot_id: int, amount: int, user_id: str, user_name: s
 
 
 def process_auto_bids(conn, cur, lot_id: int, current_price: int, current_leader_id: str):
-    """После ставки проверяем, есть ли автоставки других участников, которые могут перебить."""
-    now = datetime.now(timezone.utc)
+    """После ставки проверяем автоставки в цикле, пока есть кому перебивать."""
+    leader_id = current_leader_id
+    MAX_ROUNDS = 20  # защита от бесконечного цикла
 
-    # Берём активный лот ещё раз
-    cur.execute(f"""
-        SELECT id, current_price, step, ends_at, status
-        FROM {SCHEMA}.lots WHERE id = {lot_id} FOR UPDATE
-    """)
-    row = cur.fetchone()
-    if not row:
-        return
-    _, cp, step, ends_at, status = row
-    if status != 'active' or ends_at <= now:
-        return
+    for _ in range(MAX_ROUNDS):
+        now = datetime.now(timezone.utc)
 
-    # Находим лучшую автоставку от НЕ-лидера с max_amount >= cp + step
-    next_bid = cp + step
-    cur.execute(f"""
-        SELECT user_id, user_name, user_avatar, max_amount
-        FROM {SCHEMA}.auto_bids
-        WHERE lot_id = {lot_id}
-          AND user_id != '{current_leader_id.replace("'", "''")}'
-          AND max_amount >= {next_bid}
-        ORDER BY max_amount DESC, created_at ASC
-        LIMIT 1
-    """)
-    auto = cur.fetchone()
-    if not auto:
-        return
+        cur.execute(f"""
+            SELECT id, current_price, step, ends_at, status
+            FROM {SCHEMA}.lots WHERE id = {lot_id} FOR UPDATE
+        """)
+        row = cur.fetchone()
+        if not row:
+            return
+        _, cp, step, ends_at, status = row
+        if status != 'active' or ends_at <= now:
+            return
 
-    auto_uid, auto_uname, auto_uavatar, auto_max = auto
-    # Автоставка перебивает на шаг
-    auto_amount = next_bid
+        next_bid = cp + step
+        cur.execute(f"""
+            SELECT user_id, user_name, user_avatar, max_amount
+            FROM {SCHEMA}.auto_bids
+            WHERE lot_id = {lot_id}
+              AND user_id != '{leader_id.replace("'", "''")}'
+              AND max_amount >= {next_bid}
+            ORDER BY max_amount DESC, created_at ASC
+            LIMIT 1
+        """)
+        auto = cur.fetchone()
+        if not auto:
+            return
 
-    try:
-        cur.execute("BEGIN")
-        place_bid_internal(cur, lot_id, auto_amount, auto_uid, auto_uname, auto_uavatar, now)
-        conn.commit()
-        print(f"[auto-bid] auto bid placed: lot={lot_id} user={auto_uid} amount={auto_amount}")
-    except Exception as e:
-        print(f"[auto-bid] skip: {e}")
+        auto_uid, auto_uname, auto_uavatar, auto_max = auto
+
         try:
-            conn.rollback()
-        except Exception:
-            pass
+            cur.execute("BEGIN")
+            place_bid_internal(cur, lot_id, next_bid, auto_uid, auto_uname, auto_uavatar, now)
+            conn.commit()
+            print(f"[auto-bid] auto bid placed: lot={lot_id} user={auto_uid} amount={next_bid}")
+            leader_id = auto_uid  # следующая итерация — ищем перебивающего для нового лидера
+        except Exception as e:
+            print(f"[auto-bid] skip: {e}")
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            return
 
 
 def handler(event: dict, context) -> dict:
