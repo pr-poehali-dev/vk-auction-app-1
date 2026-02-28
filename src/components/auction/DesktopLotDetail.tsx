@@ -164,7 +164,21 @@ export function DesktopLotDetail({
       )}
 
       {/* Bid area */}
-      {isActive && (
+      {isActive && user.id === "guest" && (
+        <div className="rounded-2xl p-4 mb-4 flex items-center gap-3" style={{ background: "#EEF5FF", border: "1px solid #C5D9F5" }}>
+          <Icon name="LogIn" size={20} className="text-[#2787F5] shrink-0" />
+          <p className="text-[13px] text-[#1C1A16] font-medium flex-1 leading-snug">Войдите через ВКонтакте, чтобы делать ставки</p>
+          <a
+            href="https://vk.com/app54464410"
+            target="_blank"
+            rel="noreferrer"
+            className="shrink-0 bg-[#2787F5] text-white rounded-lg px-3 py-2 text-[13px] font-semibold whitespace-nowrap"
+          >
+            Войти
+          </a>
+        </div>
+      )}
+      {isActive && user.id !== "guest" && (
         <div className="rounded-2xl p-4 mb-4" style={{ border: "1px solid #EDE0C8", background: "#fff" }}>
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-[#1C1A16]">Сделать ставку</p>
