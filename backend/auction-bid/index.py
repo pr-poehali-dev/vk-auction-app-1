@@ -164,6 +164,36 @@ def handler(event: dict, context) -> dict:
                   user_avatar = EXCLUDED.user_avatar
         """)
         conn.commit()
+
+        # Если пользователь уже не лидер — сразу пробуем сделать автоставку
+        cur.execute(f"""
+            SELECT current_price, step
+            FROM {SCHEMA}.lots WHERE id = {int(lot_id)} FOR UPDATE
+        """)
+        lot_row = cur.fetchone()
+        if lot_row:
+            cp, step = lot_row
+            cur.execute(f"""
+                SELECT user_id FROM {SCHEMA}.bids
+                WHERE lot_id = {int(lot_id)}
+                ORDER BY amount DESC, created_at ASC
+                LIMIT 1
+            """)
+            leader_row = cur.fetchone()
+            current_leader_id = leader_row[0] if leader_row else None
+            if current_leader_id != user_id and int(max_amount) >= cp + step:
+                try:
+                    cur.execute("BEGIN")
+                    place_bid_internal(cur, int(lot_id), cp + step, user_id, user_name, user_avatar, datetime.now(timezone.utc))
+                    conn.commit()
+                    print(f"[auto-bid] immediate auto bid: lot={lot_id} user={user_id} amount={cp + step}")
+                except Exception as e:
+                    print(f"[auto-bid] immediate skip: {e}")
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+
         conn.close()
         return {"statusCode": 200, "headers": CORS, "body": json.dumps({"ok": True})}
 
