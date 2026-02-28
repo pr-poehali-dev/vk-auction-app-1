@@ -106,12 +106,16 @@ def process_auto_bids(conn, cur, lot_id: int, current_price: int, current_leader
     auto_amount = next_bid
 
     try:
+        cur.execute("BEGIN")
         place_bid_internal(cur, lot_id, auto_amount, auto_uid, auto_uname, auto_uavatar, now)
         conn.commit()
         print(f"[auto-bid] auto bid placed: lot={lot_id} user={auto_uid} amount={auto_amount}")
-    except ValueError as e:
+    except Exception as e:
         print(f"[auto-bid] skip: {e}")
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            pass
 
 
 def handler(event: dict, context) -> dict:
