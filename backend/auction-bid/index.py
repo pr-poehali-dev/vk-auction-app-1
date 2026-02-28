@@ -132,6 +132,9 @@ def handler(event: dict, context) -> dict:
     if not lot_id:
         return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "Не указан лот"})}
 
+    if not user_id or user_id in ("guest", "dev"):
+        return {"statusCode": 403, "headers": CORS, "body": json.dumps({"error": "Необходимо войти через ВКонтакте"})}
+
     # ── Установить/обновить автоставку ───────────────────────────────────────
     if action == "auto_bid":
         max_amount = body.get("maxAmount")
