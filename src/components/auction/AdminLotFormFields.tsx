@@ -125,6 +125,7 @@ export function AdminLotFormFields({ form, set, isNew, videoUploading, uploadPro
         videoUrlRef.current = url as string;
         set("video", url);
         setUploadProgress(100);
+        extractVideoThumbnail(file, url, set);
       } else {
         await api({ action: "abort", key, uploadId });
         alert("Ошибка завершения загрузки");
@@ -133,6 +134,48 @@ export function AdminLotFormFields({ form, set, isNew, videoUploading, uploadPro
       alert("Ошибка загрузки: " + String(err));
     }
     setVideoUploading(false);
+  }
+
+  function extractVideoThumbnail(file: File, videoUrl: string, setField: (k: string, v: unknown) => void) {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    const objectUrl = URL.createObjectURL(file);
+    video.src = objectUrl;
+    video.currentTime = 1;
+    video.addEventListener("seeked", () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 360;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { URL.revokeObjectURL(objectUrl); return; }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(async (blob) => {
+        URL.revokeObjectURL(objectUrl);
+        if (!blob) return;
+        try {
+          const toBase64 = (b: Blob): Promise<string> =>
+            new Promise((res, rej) => {
+              const r = new FileReader();
+              r.onload = () => res((r.result as string).split(",")[1]);
+              r.onerror = rej;
+              r.readAsDataURL(b);
+            });
+          const data = await toBase64(blob);
+          const thumbName = videoUrl.split("/").pop()?.replace(/\.[^.]+$/, "") + "_thumb.jpg";
+          const resp = await fetch(UPLOAD_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "upload_image", filename: thumbName, contentType: "image/jpeg", data }),
+          });
+          if (!resp.ok) return;
+          const { url: thumbUrl } = await resp.json();
+          if (thumbUrl) setField("image", thumbUrl);
+        } catch (e) { void e; }
+      }, "image/jpeg", 0.85);
+    }, { once: true });
+    video.addEventListener("error", () => URL.revokeObjectURL(objectUrl), { once: true });
   }
 
   return (
