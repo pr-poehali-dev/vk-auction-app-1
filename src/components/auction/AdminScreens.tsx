@@ -6,6 +6,54 @@ export { AdminLotForm } from "@/components/auction/AdminLotForm";
 
 const TRACK_URL = "https://functions.poehali.dev/e8bd7a1d-ec16-415b-ade0-2d0e35b9ba7e";
 
+type VisitorEntry = { vkUserId: string; userName: string; visitedAt: string };
+type VisitorsData = { totalUnique: number; todayUnique: number; recent: VisitorEntry[] };
+
+function VisitorsModal({ data, onClose }: { data: VisitorsData; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl w-full max-w-sm mx-4 overflow-hidden shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E8E8]">
+          <p className="font-semibold text-[15px] text-[#1C1C1E]">Последние посетители</p>
+          <button onClick={onClose} className="text-[#767676]"><Icon name="X" size={18} /></button>
+        </div>
+        <div className="divide-y divide-[#F0EDE8]">
+          {data.recent.length === 0 && (
+            <p className="text-center text-sm text-[#767676] py-6">Нет данных</p>
+          )}
+          {data.recent.map((v, i) => {
+            const initials = v.userName.split(" ").map((w) => w[0]).filter(Boolean).slice(0, 2).join("");
+            const date = new Date(v.visitedAt);
+            const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+            const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+            return (
+              <div key={i} className="flex items-center gap-3 px-4 py-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0" style={{ background: "#C9A84C" }}>
+                  {initials || "?"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <a
+                    href={`https://vk.com/id${v.vkUserId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[13px] font-medium text-[#2787F5] underline decoration-dotted truncate block"
+                  >
+                    {v.userName || `id${v.vkUserId}`}
+                  </a>
+                </div>
+                <span className="text-[11px] text-[#B8A070] shrink-0">{dateStr}, {timeStr}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopLot, onDeleteLot, adminId }: {
   lots: Lot[];
   onEditLot: (id: string) => void;
@@ -16,7 +64,8 @@ export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopL
   adminId?: string;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [visitors, setVisitors] = useState<{ totalUnique: number; todayUnique: number } | null>(null);
+  const [visitors, setVisitors] = useState<VisitorsData | null>(null);
+  const [showVisitors, setShowVisitors] = useState(false);
 
   useEffect(() => {
     if (!adminId) return;
@@ -71,7 +120,10 @@ export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopL
 
         {/* Visitors */}
         {visitors && (
-          <div className="grid grid-cols-2 gap-2">
+          <button
+            className="w-full grid grid-cols-2 gap-2"
+            onClick={() => setShowVisitors(true)}
+          >
             <div className="bg-white border border-[#E8E8E8] rounded-xl p-3 text-center">
               <p className="text-[20px] font-bold text-[#C9A84C]">{visitors.totalUnique}</p>
               <p className="text-[10px] text-[#767676] leading-tight mt-0.5">Уникальных за всё время</p>
@@ -80,7 +132,10 @@ export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopL
               <p className="text-[20px] font-bold text-[#C9A84C]">{visitors.todayUnique}</p>
               <p className="text-[10px] text-[#767676] leading-tight mt-0.5">За последние 24 часа</p>
             </div>
-          </div>
+          </button>
+        )}
+        {showVisitors && visitors && (
+          <VisitorsModal data={visitors} onClose={() => setShowVisitors(false)} />
         )}
 
         {/* Export */}

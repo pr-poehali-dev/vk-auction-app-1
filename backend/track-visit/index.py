@@ -61,12 +61,26 @@ def handler(event: dict, context) -> dict:
         )
         today_unique = cur.fetchone()[0]
 
+        cur.execute(
+            f"""
+            SELECT DISTINCT ON (vk_user_id) vk_user_id, user_name, visited_at
+            FROM {SCHEMA}.visits
+            ORDER BY vk_user_id, visited_at DESC
+            """
+        )
+        rows = cur.fetchall()
+        rows.sort(key=lambda r: r[2], reverse=True)
+        recent = [
+            {"vkUserId": r[0], "userName": r[1], "visitedAt": r[2].isoformat()}
+            for r in rows[:10]
+        ]
+
         cur.close()
         conn.close()
         return {
             "statusCode": 200,
             "headers": CORS,
-            "body": json.dumps({"totalUnique": total_unique, "todayUnique": today_unique}),
+            "body": json.dumps({"totalUnique": total_unique, "todayUnique": today_unique, "recent": recent}),
         }
 
     return {"statusCode": 405, "headers": CORS, "body": json.dumps({"error": "method not allowed"})}
