@@ -3,8 +3,12 @@ import type { Lot, User } from "@/types/auction";
 import { formatPrice, formatTime } from "@/components/auction/lotUtils";
 
 export function BidsScreen({ lots, user, onLot }: { lots: Lot[]; user: User; onLot: (id: string) => void }) {
+  const isMe = (id: string) =>
+    id === user.id ||
+    (user.numericId != null && (id === user.numericId || id === `id${user.numericId}`));
+
   const myBids = lots
-    .flatMap((l) => l.bids.filter((b) => b.userId === user.id || (user.numericId != null && (b.userId === user.numericId || b.userId === `id${user.numericId}`))).map((b) => ({ bid: b, lot: l })))
+    .flatMap((l) => l.bids.filter((b) => isMe(b.userId)).map((b) => ({ bid: b, lot: l })))
     .sort((a, b) => b.bid.createdAt.getTime() - a.bid.createdAt.getTime());
 
   return (
@@ -23,7 +27,7 @@ export function BidsScreen({ lots, user, onLot }: { lots: Lot[]; user: User; onL
           <div className="space-y-3 mt-3">
             {myBids.map(({ bid, lot }) => {
               const isLeading = lot.bids[0]?.id === bid.id;
-              const isWinner = lot.status === "finished" && lot.winnerId === user.id;
+              const isWinner = lot.status === "finished" && lot.winnerId != null && isMe(lot.winnerId);
               return (
                 <div
                   key={bid.id}

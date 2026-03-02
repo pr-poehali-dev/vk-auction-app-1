@@ -23,6 +23,11 @@ export function useAuction() {
     isAdmin: vkUser.isAdmin,
   };
 
+  function isMe(id: string | undefined) {
+    if (!id || vkUser.screenName === "guest") return false;
+    return id === vkUser.screenName || id === vkUser.id || id === `id${vkUser.id}`;
+  }
+
   function notifyWinner(lot: Lot) {
     if (notifiedLots.current.has(lot.id)) return;
     notifiedLots.current.add(lot.id);
@@ -40,7 +45,7 @@ export function useAuction() {
         const normalized = data.map(normalizeLot);
         setLots(normalized);
         normalized.forEach((lot) => {
-          if (lot.status === "finished" && lot.winnerId === vkUser.screenName && vkUser.screenName !== "guest") {
+          if (lot.status === "finished" && isMe(lot.winnerId)) {
             notifyWinner(lot);
           }
         });
@@ -69,9 +74,23 @@ export function useAuction() {
 
   useEffect(() => {
     if (screen !== "lot" || !activeLot) return;
-    const id = setInterval(() => loadLot(activeLot.id), 5000);
-    return () => clearInterval(id);
-  }, [screen, activeLot?.id]);
+
+    function getInterval() {
+      if (!activeLot || activeLot.status !== "active" || !activeLot.endsAt) return 5000;
+      const msLeft = activeLot.endsAt.getTime() - Date.now();
+      return msLeft < 120_000 ? 1000 : 5000;
+    }
+
+    let timerId: ReturnType<typeof setTimeout>;
+    function schedule() {
+      timerId = setTimeout(async () => {
+        await loadLot(activeLot!.id);
+        schedule();
+      }, getInterval());
+    }
+    schedule();
+    return () => clearTimeout(timerId);
+  }, [screen, activeLot?.id, activeLot?.status, activeLot?.endsAt?.getTime()]);
 
   async function handleBid(lotId: string, amount: number): Promise<string> {
     try {
