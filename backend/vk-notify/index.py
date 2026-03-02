@@ -43,6 +43,8 @@ def handler(event: dict, context) -> dict:
     with urllib.request.urlopen(req, timeout=10) as resp:
         vk_resp = json.loads(resp.read().decode())
 
+    print("VK response:", json.dumps(vk_resp, ensure_ascii=False))
+
     if vk_resp.get("error"):
         err = vk_resp["error"]
         return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": err.get("error_msg", "VK API error"), "code": err.get("error_code")})}
