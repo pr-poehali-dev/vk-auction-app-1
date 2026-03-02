@@ -67,7 +67,7 @@ def time_left(ends_at_str):
 
 def build_widget(rows, app_id):
     rows_out = []
-    app_url = f"https://vk.com/app{app_id}" if app_id else ""
+    app_url = f"https://vk.com/app{app_id}" if app_id else "https://vk.com/app54464410"
     for row in rows:
         lot_id, title, current_price, status, ends_at, image, bid_count = row
         item = {
