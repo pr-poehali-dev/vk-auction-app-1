@@ -59,8 +59,26 @@ export function useAuction() {
 
   useEffect(() => {
     loadLots();
-    const id = setInterval(loadLots, 15000);
-    return () => clearInterval(id);
+
+    let catalogTimer: ReturnType<typeof setTimeout>;
+    function getCatalogInterval() {
+      const now = Date.now();
+      const minLeft = lots
+        .filter((l) => l.status === "active" && l.endsAt)
+        .map((l) => l.endsAt!.getTime() - now)
+        .reduce((min, ms) => Math.min(min, ms), Infinity);
+      if (minLeft < 120_000) return 1000;
+      if (minLeft < 600_000) return 5000;
+      return 15000;
+    }
+    function scheduleCatalog() {
+      catalogTimer = setTimeout(async () => {
+        await loadLots();
+        scheduleCatalog();
+      }, getCatalogInterval());
+    }
+    scheduleCatalog();
+    return () => clearTimeout(catalogTimer);
   }, [loadLots]);
 
   async function loadLot(id: string) {
