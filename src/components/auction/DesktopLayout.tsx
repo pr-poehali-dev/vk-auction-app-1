@@ -18,6 +18,7 @@ export function DesktopLayout({
   onStopLot,
   onDeleteLot,
   onResetNotifications,
+  onRequestNotifications,
 }: {
   lots: Lot[];
   user: User;
