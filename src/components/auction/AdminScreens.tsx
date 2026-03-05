@@ -157,6 +157,7 @@ export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopL
   const [showVisitors, setShowVisitors] = useState(false);
   const [widgetStatus, setWidgetStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [widgetError, setWidgetError] = useState("");
+  const [resetDone, setResetDone] = useState(false);
 
   useEffect(() => {
     if (!adminId) return;
@@ -273,11 +274,14 @@ export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopL
         {/* Dev: reset notifications state */}
         {onResetNotifications && (
           <button
-            onClick={onResetNotifications}
-            className="w-full flex items-center justify-center gap-2 border border-dashed border-[#D0C0A0] bg-[#FFFDF5] rounded-xl py-2.5 text-[12px] font-medium text-[#B8922A]"
+            onClick={() => { onResetNotifications(); setResetDone(true); setTimeout(() => setResetDone(false), 2000); }}
+            className="w-full flex items-center justify-center gap-2 border border-dashed rounded-xl py-2.5 text-[12px] font-medium transition-colors"
+            style={resetDone
+              ? { borderColor: "#4CAF50", background: "#F0FFF0", color: "#4CAF50" }
+              : { borderColor: "#D0C0A0", background: "#FFFDF5", color: "#B8922A" }}
           >
-            <Icon name="RotateCcw" size={13} />
-            Сбросить статус уведомлений (тест)
+            <Icon name={resetDone ? "Check" : "RotateCcw"} size={13} />
+            {resetDone ? "Сброшено — теперь сделай ставку" : "Сбросить статус уведомлений (тест)"}
           </button>
         )}
 
