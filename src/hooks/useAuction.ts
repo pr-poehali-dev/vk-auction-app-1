@@ -152,6 +152,7 @@ export function useAuction() {
   }
 
   async function handleBid(lotId: string, amount: number): Promise<string> {
+    console.log("[handleBid] called, lotId:", lotId, "amount:", amount);
     requestNotificationPermission();
     try {
       const res = await apiPlaceBid(Number(lotId), amount, user) as Record<string, unknown>;
