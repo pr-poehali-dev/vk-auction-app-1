@@ -121,6 +121,7 @@ export function useAuction() {
   const notificationsDeclinedRef = useRef(false);
 
   async function requestNotificationPermission() {
+    console.log("[notifications] called, screenName:", vkUser.screenName, "requested:", notificationsRequested.current, "declined:", notificationsDeclinedRef.current);
     if (vkUser.screenName === "guest") return;
     if (notificationsRequested.current && !notificationsDeclinedRef.current) return;
     notificationsRequested.current = true;
