@@ -113,7 +113,7 @@ export function MobileShell() {
 }
 
 export function DesktopShell() {
-  const { lots, loading, user, vkUser, handleBid, handleAutoBid, handleSaveLot, handleUpdateStatus, handleStopLot, handleDeleteLot } = useAuction();
+  const { lots, loading, user, vkUser, handleBid, handleAutoBid, handleSaveLot, handleUpdateStatus, handleStopLot, handleDeleteLot, resetNotificationsState } = useAuction();
 
   if (vkUser.isLoading) return <LoadingScreen />;
 
@@ -128,6 +128,7 @@ export function DesktopShell() {
       onUpdateStatus={handleUpdateStatus}
       onStopLot={handleStopLot}
       onDeleteLot={handleDeleteLot}
+      onResetNotifications={resetNotificationsState}
     />
   );
 }

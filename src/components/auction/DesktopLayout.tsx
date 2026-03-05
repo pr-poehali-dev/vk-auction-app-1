@@ -17,6 +17,7 @@ export function DesktopLayout({
   onUpdateStatus,
   onStopLot,
   onDeleteLot,
+  onResetNotifications,
 }: {
   lots: Lot[];
   user: User;
@@ -27,6 +28,7 @@ export function DesktopLayout({
   onUpdateStatus: (id: string, status: Lot["paymentStatus"]) => Promise<void>;
   onStopLot: (id: string) => Promise<void>;
   onDeleteLot: (id: string) => Promise<void>;
+  onResetNotifications?: () => void;
 }) {
   const [screen, setScreen] = useState<DesktopScreen>("catalog");
   const [editingLotId, setEditingLotId] = useState<string | null | "new">(null);
@@ -126,6 +128,8 @@ export function DesktopLayout({
                   onUpdateStatus={onUpdateStatus}
                   onStopLot={onStopLot}
                   onDeleteLot={onDeleteLot}
+                  adminId={user.numericId}
+                  onResetNotifications={onResetNotifications}
                 />
               </div>
             )}
