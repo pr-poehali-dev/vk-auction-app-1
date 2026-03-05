@@ -13,6 +13,11 @@ export function useAuction() {
   const notifiedLots = useRef<Set<string>>(new Set());
   const notificationsRequested = useRef(false);
   const [notificationsDeclined, setNotificationsDeclined] = useState(false);
+
+  function resetNotificationsState() {
+    notificationsRequested.current = false;
+    setNotificationsDeclined(false);
+  }
   const vkUser = useVKUser();
   const vkUserId = vkUser.id;
 
@@ -131,7 +136,7 @@ export function useAuction() {
     } catch (e: unknown) {
       const err = e as { error_data?: { error_reason?: string }; error_type?: string };
       const reason = err?.error_data?.error_reason ?? err?.error_type ?? "";
-      // Declined only when user explicitly rejected, not on technical errors (unsupported env etc)
+      console.error("[notifications] VKWebAppAllowMessagesFromGroup failed:", JSON.stringify(e));
       if (reason === "User denied" || reason === "user_denied") {
         setNotificationsDeclined(true);
       } else {
@@ -248,5 +253,6 @@ export function useAuction() {
     loadLots,
     notificationsDeclined,
     requestNotificationPermission,
+    resetNotificationsState,
   };
 }

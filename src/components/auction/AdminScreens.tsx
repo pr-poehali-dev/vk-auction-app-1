@@ -142,7 +142,7 @@ function VisitorsModal({ data, onClose }: { data: VisitorsData; onClose: () => v
   );
 }
 
-export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopLot, onDeleteLot, adminId }: {
+export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopLot, onDeleteLot, adminId, onResetNotifications }: {
   lots: Lot[];
   onEditLot: (id: string) => void;
   onNewLot: () => void;
@@ -150,6 +150,7 @@ export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopL
   onStopLot: (id: string) => void;
   onDeleteLot: (id: string) => void;
   adminId?: string;
+  onResetNotifications?: () => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [visitors, setVisitors] = useState<VisitorsData | null>(null);
@@ -268,6 +269,17 @@ export function AdminScreen({ lots, onEditLot, onNewLot, onUpdateStatus, onStopL
 
         {/* Notifications */}
         <NotificationsPanel adminId={adminId} />
+
+        {/* Dev: reset notifications state */}
+        {onResetNotifications && (
+          <button
+            onClick={onResetNotifications}
+            className="w-full flex items-center justify-center gap-2 border border-dashed border-[#D0C0A0] bg-[#FFFDF5] rounded-xl py-2.5 text-[12px] font-medium text-[#B8922A]"
+          >
+            <Icon name="RotateCcw" size={13} />
+            Сбросить статус уведомлений (тест)
+          </button>
+        )}
 
         {/* Export */}
         <button
