@@ -16,6 +16,7 @@ export function useAuction() {
 
   function resetNotificationsState() {
     notificationsRequested.current = false;
+    notificationsDeclinedRef.current = false;
     setNotificationsDeclined(false);
   }
   const vkUser = useVKUser();
@@ -117,10 +118,13 @@ export function useAuction() {
     return () => clearTimeout(timerId);
   }, [screen, activeLot?.id, activeLot?.status, activeLot?.endsAt?.getTime()]);
 
+  const notificationsDeclinedRef = useRef(false);
+
   async function requestNotificationPermission() {
     if (vkUser.screenName === "guest") return;
-    if (notificationsRequested.current && !notificationsDeclined) return;
+    if (notificationsRequested.current && !notificationsDeclinedRef.current) return;
     notificationsRequested.current = true;
+    notificationsDeclinedRef.current = false;
     setNotificationsDeclined(false);
     try {
       const res = await bridge.send("VKWebAppCallAPIMethod", {
@@ -138,6 +142,7 @@ export function useAuction() {
       const reason = err?.error_data?.error_reason ?? err?.error_type ?? "";
       console.error("[notifications] VKWebAppAllowMessagesFromGroup failed:", JSON.stringify(e));
       if (reason === "User denied" || reason === "user_denied") {
+        notificationsDeclinedRef.current = true;
         setNotificationsDeclined(true);
       } else {
         notificationsRequested.current = false;
